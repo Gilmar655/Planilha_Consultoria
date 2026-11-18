@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planejamento START · Programação e Execução | Enel Brasil – Grids</title>
+<meta name="description" content="Painel da Planilha de Planejamento START: visão geral, instruções, carteira, base programada, equipes programadas e restrições.">
+<style>/*CSS*/</style>
+</head>
+<body>
+<noscript><div style="background:#fff6e0;border-bottom:1px solid #f3dc9e;padding:12px 24px;font:14px system-ui">Este painel precisa de JavaScript ativado para mostrar os dados.</div></noscript>
+<header class="top" style="padding-bottom:0">
+  <div class="top-row">
+    <div class="brand">
+      <img src="assets/logo-enel.png" alt="Enel" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+      <span class="mark">Enel Brasil · Grids</span>
+      <div>
+        <h1>Planejamento START · Programação e Execução</h1>
+        <p>Gestão de Programação · Start Engenharia · Projeto EOP</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="clock"><b id="clkH">--:--:--</b><span id="clkD"></span></div>
+  </div>
+  <div class="basebar" id="basebar"></div>
+</header>
+
+<div class="layout">
+  <nav class="side" id="side" aria-label="Seções do painel"><div class="sidetitle">Acesso</div></nav>
+  <main class="content" id="content">
+    <div class="banner ok" id="bannerSaved" style="display:none">Exibindo a última planilha importada neste navegador.<button class="btn" id="btnOriginal">Voltar à base original do painel</button></div>
+    <div class="sechead"><div><h2 id="secTitle"></h2><p id="secDesc"></p></div></div>
+    <div class="toolbar">
+      <input class="search" id="q" type="search" placeholder="Buscar…" aria-label="Buscar">
+      <span class="lbl" data-dates>De</span><input class="date" type="date" id="de" aria-label="Data inicial" data-dates>
+      <span class="lbl" data-dates>até</span><input class="date" type="date" id="ate" aria-label="Data final" data-dates>
+      <button class="btn ghost" id="btnLimpar" disabled>Limpar filtros</button>
+      <span class="note" id="fInfo"></span>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary" id="btnImport">⤒ Importar planilha (.xlsm / .xlsx)</button>
+      <button class="btn" id="btnXlsx">⤓ Exportar Excel desta seção</button>
+      <button class="btn" id="btnCsv">⤓ CSV da lista geral</button>
+    </div>
+    <section class="filters" id="filters" aria-label="Filtros"></section>
+    <div id="view"></div>
+    <div class="card lista" id="lista"><h3>Lista geral <span class="cnt" id="listaCnt"></span></h3><p class="sub" id="listaSub"></p><div class="tablewrap" id="tLista" style="max-height:620px"></div><div class="pager" id="pgLista"></div></div>
+  </main>
+</div>
+
+<footer>
+  <span>Desenvolvido por <b>Gilmar Campos</b> · Técnico – Gestão de Programação · Enel Brasil – Grids</span>
+  <span>Dados processados só no seu navegador; nada é enviado a servidores. · versão {{VERSAO}}</span>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mT">
+  <div class="box">
+    <h3 id="mT">Importar planilha</h3>
+    <p class="note">Escolha a <b>Planilha de Planejamento START</b> (.xlsm ou .xlsx) mais recente. O painel lê Instruções, CARTEIRA, Base Programada, Histórico, Planilha de Restrição, Histórico Restrições, Equipes programadas, Semanas Programadas, Equipes Mobilizadas, Registros Semanais, Auxiliar ListSusp e Verificação, inclusive as abas ocultas. As macros não são executadas e nada sai do seu computador. A importação atualiza todas as seções.</p>
+    <div class="drop" id="drop">Arraste o arquivo aqui ou <b>clique para escolher</b></div>
+    <input type="file" id="file" accept=".xlsm,.xlsx" hidden>
+    <label><input type="checkbox" id="lembrar" checked> <span>Lembrar esta base neste navegador (abre direto na próxima visita)</span></label>
+    <div class="progress" id="prog"></div>
+    <div style="text-align:right;margin-top:8px"><button class="btn" id="mFechar">Fechar</button></div>
+  </div>
+</div>
+<div class="modal" id="pmodal" role="dialog" aria-modal="true" aria-labelledby="dTitulo">
+  <div class="box wide">
+    <button class="closex" id="pFechar" aria-label="Fechar">×</button>
+    <h3 id="dTitulo" class="mono" style="font-size:17px"></h3><div class="note" id="dSub" style="margin-bottom:6px"></div>
+    <div class="facts" id="dFacts"></div><div id="dObs" class="note" style="margin-bottom:8px"></div>
+    <h3 style="margin-top:8px">UPS programado × executado por data</h3>
+    <div class="legend"><span><i style="background:var(--s1)"></i>UPS programado</span><span><i style="background:var(--s3)"></i>UPS executado</span></div>
+    <div class="chart" id="chProj"></div>
+    <h3 style="margin-top:14px">Linha do tempo (mais recente primeiro)</h3>
+    <ul class="timeline" id="dTimeline"></ul>
+    <h3 style="margin-top:14px">Restrições pendentes do projeto</h3>
+    <div class="tablewrap" id="dRestr" style="max-height:320px"></div>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>window.BASE = /*DATA*/;</script>
+<script>/*IO*/</script>
+<script>/*DATAJS*/</script>
+<script>/*CHARTS*/</script>
+<script>/*APP*/</script>
+</body>
+</html>

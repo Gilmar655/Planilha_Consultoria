@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Painel local e interativo para consulta de programações, projetos e equipes da Start Engenharia.">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>Central de Programações | Start Engenharia · Enel Brasil</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-box">
+      <div class="logo-frame" title="Logomarca Enel Brasil — imagem pública disponibilizada pela Wikimedia Commons">
+        <img class="enel-logo" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Enel_Brasil_Nova_Marca.svg" alt="Enel Brasil" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+        <span class="logo-fallback" hidden><span class="mark-e">enel</span> <small>BRASIL</small></span>
+      </div>
+      <div class="brand-sub">GESTÃO OPERACIONAL <span class="brand-dot"></span> 2026</div>
+    </div>
+
+    <div class="sidebar-label">PAINEL DE CONTROLE</div>
+    <nav class="nav-list" aria-label="Navegação principal">
+      <button class="nav-item active" data-page="overview"><span class="nav-icon">◫</span><span>Visão geral</span></button>
+      <button class="nav-item" data-page="programacoes"><span class="nav-icon">▤</span><span>Programações</span></button>
+      <button class="nav-item" data-page="projetos"><span class="nav-icon">▦</span><span>Projetos</span></button>
+      <button class="nav-item" data-page="equipes"><span class="nav-icon">♧</span><span>Equipes</span></button>
+      <button class="nav-item" data-page="qualidade"><span class="nav-icon">◇</span><span>Qualidade dos dados</span><span class="nav-alert">!</span></button>
+      <button class="nav-item" data-page="integral"><span class="nav-icon">≡</span><span>Base integral</span></button>
+    </nav>
+
+    <div class="sidebar-label secondary-section">FERRAMENTAS</div>
+    <div class="nav-list">
+      <button class="nav-item" id="nav-import"><span class="nav-icon">↥</span><span>Importar Excel / CSV</span></button>
+      <button class="nav-item" id="nav-export"><span class="nav-icon">↧</span><span>Exportar Excel</span></button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="source-card">
+        <span class="source-indicator"></span><div><strong>Fonte de dados local</strong><small>Consulta no navegador, sem servidor</small></div>
+      </div>
+      <div class="sidebar-note">Painel independente e não oficial. Publicação dos dados depende de autorização da Enel.</div>
+      <a class="sidebar-credit" href="https://www.enel.com.br/pt/quemsomos/nova-marca.html" target="_blank" rel="noopener noreferrer">Identidade visual Enel Brasil ↗</a>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="topbar">
+      <div class="top-left"><button class="icon-btn mobile-menu" id="toggle-sidebar" aria-label="Abrir menu">☰</button><div class="breadcrumb">Operações <span>/</span> <strong id="breadcrumb-name">Visão geral</strong></div></div>
+      <div class="top-actions"><div class="clock-box"><span class="live-dot"></span><div><strong id="live-time">--:--:--</strong><small id="live-date">Carregando data...</small></div></div><button class="icon-btn top-help" id="btn-info" title="Sobre esta ferramenta" aria-label="Sobre esta ferramenta">?</button></div>
+    </header>
+
+    <main class="content">
+      <section class="hero" aria-label="Cabeçalho do painel">
+        <div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span> START ENGENHARIA · PLANEJAMENTO E EXECUÇÃO</div><h1>Central de <em>Programações</em></h1><p>Uma visão inteligente das frentes de trabalho, equipes e projetos — da programação à consulta detalhada dos registros.</p><div class="hero-tags"><span class="hero-tag" id="period-tag">Setembro de 2026</span><span class="hero-tag subdued" id="source-tag">CSV · 1 aba</span><span class="hero-tag subdued">Sem sincronização automática</span></div></div>
+        <div class="hero-art" aria-hidden="true"><div class="hero-orbit o1"></div><div class="hero-orbit o2"></div><div class="hero-orbit o3"></div><div class="hero-symbol">⚡</div></div>
+      </section>
+
+      <div class="toolbar">
+        <div class="toolbar-context"><div class="toolbar-icon">▦</div><div><small>BASE EM ANÁLISE</small><select id="sheet-select" aria-label="Selecionar aba da planilha"></select></div></div>
+        <div class="toolbar-actions"><button class="btn btn-outline" id="btn-import"><span>↥</span> Importar arquivo</button><button class="btn btn-main" id="btn-export"><span>↧</span> Exportar Excel</button><button class="btn btn-ghost" id="btn-reset" title="Restaurar base original">↺</button></div>
+      </div>
+      <div class="notice" id="import-notice" hidden></div>
+
+      <section class="filter-panel" id="filters-panel">
+        <div class="filter-heading"><div><strong>Filtros de consulta</strong><span>Os filtros atualizam indicadores, gráficos e tabelas simultaneamente.</span></div><button class="link-btn" id="clear-filters">Limpar filtros <span>↺</span></button></div>
+        <div class="filter-grid"><label class="field field-search"><span>Buscar na programação</span><input type="search" id="filter-search" placeholder="Projeto, endereço, circuito, serviço..." autocomplete="off"></label><label class="field"><span>Supervisor</span><select id="filter-supervisor"></select></label><label class="field"><span>Encarregado</span><select id="filter-encarregado"></select></label><label class="field"><span>Família de obra</span><select id="filter-familia"></select></label><label class="field"><span>Tipo de documento</span><select id="filter-doc"></select></label><label class="field"><span>Período inicial</span><input type="date" id="filter-from"></label><label class="field"><span>Período final</span><input type="date" id="filter-to"></label><label class="field"><span>Coluna D (equipe)</span><select id="filter-tipo"></select></label></div>
+        <div class="filter-count" id="filter-count">Carregando...</div>
+      </section>
+
+      <section class="page active" id="page-overview" data-page-title="Visão geral">
+        <div class="page-intro"><div><div class="section-kicker">PANORAMA OPERACIONAL</div><h2>Indicadores da programação</h2><p>Dados calculados sobre os registros da aba selecionada.</p></div><div class="faint-label" id="current-sheet-caption"></div></div>
+        <div class="kpi-grid">
+          <article class="kpi-card"><div class="kpi-top"><span class="kpi-label">Registros com data</span><span class="kpi-ico i-blue">▤</span></div><div class="kpi-value" id="kpi-rows">—</div><div class="kpi-foot">Linhas que representam programação</div></article>
+          <article class="kpi-card"><div class="kpi-top"><span class="kpi-label">UPS das linhas</span><span class="kpi-ico i-green">◈</span></div><div class="kpi-value" id="kpi-ups">—</div><div class="kpi-foot">Soma de UPS PROG nos registros filtrados</div></article>
+          <article class="kpi-card"><div class="kpi-top"><span class="kpi-label">Códigos de projeto</span><span class="kpi-ico i-violet">▦</span></div><div class="kpi-value" id="kpi-projects">—</div><div class="kpi-foot">Identificadores compatíveis com o padrão DAC/DMP</div></article>
+          <article class="kpi-card"><div class="kpi-top"><span class="kpi-label">Atividades com UPS</span><span class="kpi-ico i-amber">⌁</span></div><div class="kpi-value" id="kpi-activities">—</div><div class="kpi-foot">Linhas com UPS programada maior que zero</div></article>
+        </div>
+        <div class="insight-line" id="reconciliation-box"></div>
+        <div class="charts-grid">
+          <article class="panel panel-large"><div class="panel-heading"><div><div class="section-kicker">CRONOGRAMA</div><h3>Evolução diária de UPS</h3><p>Somatório por data registrada na coluna DATA</p></div><span class="panel-tag">UPS PROG</span></div><div class="chart-area" id="daily-chart"></div></article>
+          <article class="panel"><div class="panel-heading"><div><div class="section-kicker">DISTRIBUIÇÃO</div><h3>Famílias de obra</h3><p>Volume de registros classificados</p></div></div><div class="donut-area" id="family-chart"></div></article>
+          <article class="panel"><div class="panel-heading"><div><div class="section-kicker">RECURSOS</div><h3>Supervisores</h3><p>Quantidade de linhas vinculadas</p></div></div><div class="bars-area" id="supervisor-chart"></div></article>
+          <article class="panel"><div class="panel-heading"><div><div class="section-kicker">INTERVENÇÕES</div><h3>Documentos de trabalho</h3><p>FI, PIE, BRA e combinações da base</p></div></div><div class="bars-area" id="doc-chart"></div></article>
+        </div>
+        <div class="panel slim-panel"><div class="panel-heading"><div><div class="section-kicker">CONSULTA RÁPIDA</div><h3>Atividades programadas em destaque</h3></div><button class="link-btn" data-jump="programacoes">Abrir programações →</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Projeto</th><th>Encarregado</th><th>Família</th><th>UPS PROG</th><th>Documento</th><th></th></tr></thead><tbody id="preview-rows"></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="page-programacoes" data-page-title="Programações"><div class="page-intro"><div><div class="section-kicker">REGISTROS OPERACIONAIS</div><h2>Consulta de programações</h2><p>Clique em uma linha para visualizar todos os campos do registro original.</p></div><button class="btn btn-outline" id="export-filtered">↧ Exportar filtrados</button></div><div class="panel table-panel"><div class="table-meta"><div><strong id="program-total">0 registros</strong><span>Ordem cronológica · dados originais preservados</span></div><div class="table-tools"><label>Exibir <select id="program-page-size"><option>15</option><option selected>25</option><option>50</option><option>100</option></select></label></div></div><div class="table-wrap"><table class="data-table main-table"><thead><tr><th data-sort="date">Data ⇅</th><th data-sort="project">Projeto ⇅</th><th>Supervisor</th><th data-sort="encarregado">Encarregado ⇅</th><th>Tipo</th><th>Família</th><th>Circuito</th><th data-sort="ups">UPS PROG ⇅</th><th>DOC</th><th>Ação</th></tr></thead><tbody id="program-rows"></tbody></table></div><div class="pagination" id="program-pagination"></div></div></section>
+
+      <section class="page" id="page-projetos" data-page-title="Projetos"><div class="page-intro"><div><div class="section-kicker">PORTFÓLIO DE OBRAS</div><h2>Projetos identificados</h2><p>Agrupamento por código, sem confundir FOLGA e outras anotações com projetos.</p></div></div><div class="kpi-grid mini-kpis"><article class="kpi-card"><div class="kpi-label">Projetos codificados</div><div class="kpi-value" id="projects-count">—</div></article><article class="kpi-card"><div class="kpi-label">UPS por projeto</div><div class="kpi-value" id="projects-ups">—</div></article><article class="kpi-card"><div class="kpi-label">Linhas com projeto</div><div class="kpi-value" id="projects-rows">—</div></article></div><div class="panel table-panel"><div class="table-meta"><div><strong>Consolidação por código</strong><span>Não soma valores de subtotais diários</span></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Projeto</th><th>Registros</th><th>UPS PROG</th><th>1ª data</th><th>Última data</th><th>Família</th><th></th></tr></thead><tbody id="projects-rows-table"></tbody></table></div></div></section>
+
+      <section class="page" id="page-equipes" data-page-title="Equipes"><div class="page-intro"><div><div class="section-kicker">GESTÃO DE RECURSOS</div><h2>Equipes e responsáveis</h2><p>Visibilidade por encarregado e supervisor conforme preenchimento da fonte.</p></div></div><div class="charts-grid two-col"><div class="panel"><div class="panel-heading"><div><div class="section-kicker">PESSOAL</div><h3>Encarregados por registros</h3></div></div><div id="encarregado-chart" class="bars-area"></div></div><div class="panel"><div class="panel-heading"><div><div class="section-kicker">EQUIPES</div><h3>Valores da coluna D</h3><p>Coluna sem título na fonte: LM / LV</p></div></div><div id="tipo-chart" class="donut-area"></div></div></div><div class="panel table-panel"><div class="table-meta"><div><strong>Consolidado por encarregado</strong><span>Registros datados</span></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Encarregado</th><th>Registros</th><th>UPS PROG</th><th>Registros com UPS</th><th>Supervisor(es) informado(s)</th><th></th></tr></thead><tbody id="teams-rows"></tbody></table></div></div></section>
+
+      <section class="page" id="page-qualidade" data-page-title="Qualidade dos dados"><div class="page-intro"><div><div class="section-kicker">AUDITORIA DA FONTE</div><h2>Qualidade e conciliação</h2><p>Transparência sobre lacunas, fórmulas com erro e divergências sem alterar a planilha.</p></div></div><div class="quality-grid" id="quality-summary"></div><div class="panel" id="quality-alert-panel"><div class="panel-heading"><div><div class="section-kicker">PONTOS DE ATENÇÃO</div><h3>Ocorrências identificadas</h3></div></div><div id="quality-notes" class="quality-notes"></div></div><div class="panel"><div class="panel-heading"><div><div class="section-kicker">PREENCHIMENTO</div><h3>Disponibilidade por coluna</h3><p>Baseado exclusivamente nas linhas com data</p></div></div><div class="quality-columns" id="quality-columns"></div></div><div class="panel"><div class="panel-heading"><div><div class="section-kicker">FONTE ORIGINAL</div><h3>Informações de cabeçalho</h3></div></div><div class="raw-heads" id="raw-header-info"></div></div></section>
+
+      <section class="page" id="page-integral" data-page-title="Base integral"><div class="page-intro"><div><div class="section-kicker">100% DOS REGISTROS</div><h2>Base integral — sem exclusões</h2><p>Inclui metadados, títulos, subtotais, registros, linhas vazias e todas as colunas sem cabeçalho.</p></div><button class="btn btn-outline" id="export-full">↧ Exportar todas as abas</button></div><div class="panel table-panel"><div class="table-meta"><div><strong id="raw-total">0 linhas</strong><span>Colunas originais, sem exclusões nem renomeação na exportação</span></div><div class="table-tools"><label class="raw-search"><span>Buscar</span><input id="raw-search" placeholder="Qualquer campo ou número da linha"></label><label>Exibir <select id="raw-page-size"><option>20</option><option selected>40</option><option>100</option><option>250</option></select></label></div></div><div class="table-wrap large-scroll"><table class="data-table raw-table" id="raw-table"><thead id="raw-head"></thead><tbody id="raw-rows"></tbody></table></div><div class="pagination" id="raw-pagination"></div></div></section>
+
+      <footer class="footer"><span>Central de Programações · Start Engenharia</span><span>Ferramenta local para análise gerencial · Não sincronizada automaticamente com o SharePoint</span></footer>
+    </main>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="detail-modal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-heading"><div><div class="section-kicker">FICHA COMPLETA DO REGISTRO</div><h3 id="modal-title">Detalhamento</h3><p id="modal-subtitle"></p></div><button class="icon-btn" id="modal-close" aria-label="Fechar">✕</button></div><div class="modal-content" id="modal-content"></div><div class="modal-actions"><button class="btn btn-outline" id="modal-copy">Copiar campos</button><button class="btn btn-main" id="modal-done">Fechar</button></div></div></div>
+<div class="modal-backdrop" id="export-modal" hidden><div class="modal modal-small" role="dialog" aria-modal="true" aria-labelledby="export-title"><div class="modal-heading"><div><div class="section-kicker">EXPORTAÇÃO DE DADOS</div><h3 id="export-title">Baixar arquivo Excel</h3><p>Arquivos .xlsx gerados no próprio navegador.</p></div><button class="icon-btn" id="export-close" aria-label="Fechar">✕</button></div><div class="export-options"><button class="export-option" id="export-option-filtered"><span class="option-symbol">▤</span><span><strong>Programações filtradas</strong><small>Somente linhas com data que atendem aos filtros ativos</small></span><span>↧</span></button><button class="export-option" id="export-option-full"><span class="option-symbol">▦</span><span><strong>Base integral — todas as abas</strong><small>Todos os campos e linhas, inclusive dados vazios e totais</small></span><span>↧</span></button><button class="export-option" id="export-option-csv"><span class="option-symbol">≡</span><span><strong>Filtrados em CSV</strong><small>Alternativa compatível com Excel</small></span><span>↧</span></button></div></div></div>
+<div class="modal-backdrop" id="info-modal" hidden><div class="modal modal-small" role="dialog" aria-modal="true" aria-labelledby="info-title"><div class="modal-heading"><div><div class="section-kicker">COMO UTILIZAR</div><h3 id="info-title">Sobre a central</h3></div><button class="icon-btn" id="info-close" aria-label="Fechar">✕</button></div><div class="info-body"><p>Este site é estático e pode ser hospedado no GitHub Pages. A base inicial de setembro de 2026 está incluída no pacote.</p><p>Ao importar um <strong>.xlsx</strong>, os valores disponíveis de todas as abas são carregados e podem ser escolhidos no seletor; fórmulas, imagens, formatação e macros não são preservadas. Arquivos <strong>.csv</strong> têm somente uma aba lógica.</p><p>O painel faz os cálculos localmente. Nada é enviado a um servidor pelo site. Alterações importadas permanecem nesta sessão, até que você use a opção de armazenamento local.</p><button id="save-local" class="btn btn-outline full-btn">Salvar esta base neste navegador</button><button id="clear-local" class="btn btn-ghost full-btn">Apagar base salva neste navegador</button><p class="small-print">A data e a hora são atualizadas a cada segundo pelo relógio do dispositivo, no fuso de São Paulo (não são obtidas de um servidor de horário). Não há sincronização com sistemas da Enel ou com o SharePoint.</p></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" accept=".xlsx,.xlsm,.csv,.tsv" id="file-input" hidden>
+<script src="dados/base.js"></script>
+<script src="excel.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

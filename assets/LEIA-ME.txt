@@ -1,0 +1,1 @@
+Coloque aqui o arquivo logo-enel.png (altura ~34px) para exibir o logo no cabeçalho do painel.
