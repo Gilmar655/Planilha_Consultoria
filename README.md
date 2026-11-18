@@ -16,7 +16,7 @@ Desenvolvido por **Gilmar Campos**, Técnico – Gestão de Programação · Ene
 | **Planilha de Restrição** | % eliminadas por semana (meta 90%), situação por tipo, pendências por área, responsável e obra. |
 | **Painel Restrições** | O mesmo cálculo da aba Painel Restrições: % eliminadas da próxima semana e pendências por obra nas próximas 8 semanas (Nova / Veio da sem. anterior). |
 
-Todas as seções têm filtros em botões, busca, **Importar planilha**, **Exportar Excel desta seção**, CSV e, no fim da página, a **lista geral** dos registros. Clicar num projeto abre o histórico dele (CARTEIRA + execuções + restrições).
+Todas as seções têm, no topo, uma **barra de filtros fixa** (continua visível ao rolar): busca, período, **Importar**, **Excel** e **CSV**. Cada grupo de filtro (Semana, Resultado, Família, Encarregado…) é um **menu suspenso** com caixas de seleção, contagem por opção e busca interna. Os filtros ativos aparecem como etiquetas removíveis. No fim da página fica a **lista geral** dos registros. Clicar num projeto abre o histórico dele (CARTEIRA + execuções + restrições).
 
 ## Regras de cálculo (as mesmas da planilha)
 

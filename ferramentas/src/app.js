@@ -100,7 +100,7 @@
     $('#side').innerHTML = '<div class="sidetitle">Acesso</div>' + SEC.map(s => `<button class="navcard" data-sec="${s.id}" aria-current="${S.sec === s.id}"><span class="ic">${s.ic}</span><span><b>${s.t}</b><span>${cnt[s.id]}</span></span></button>`).join('');
     $$('#side .navcard').forEach(b => b.onclick = () => go(b.dataset.sec));
   }
-  function go(id) { S.sec = id; location.hash = id; $$('#side .navcard').forEach(b => b.setAttribute('aria-current', b.dataset.sec === id)); renderAll(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function go(id) { S.sec = id; S.dd = null; location.hash = id; $$('#side .navcard').forEach(b => b.setAttribute('aria-current', b.dataset.sec === id)); renderAll(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
   /* ---------- filtros ---------- */
   function pass(sec, r, skip) {
@@ -111,33 +111,53 @@
     return true;
   }
   const filtered = sec => sec.data().filter(r => pass(sec, r));
+  /* filtros: um menu suspenso por grupo, na barra fixa acima do título */
+  function groupValues(sec, g) {
+    const x = st(), data = sec.data(), counts = new Map();
+    for (const r of data) { const v = r[g.key]; if (v !== '' && v != null && !counts.has(v)) counts.set(v, 0); }
+    for (const r of data) { const v = r[g.key]; if (v !== '' && v != null && pass(sec, r, g.key)) counts.set(v, counts.get(v) + 1); }
+    let vals = [...counts.keys()];
+    if (g.sort === 'key') vals.sort(); else if (g.sort === 'desc') vals.sort().reverse(); else if (typeof g.sort === 'function') vals.sort(g.sort); else vals.sort((a, b) => counts.get(b) - counts.get(a) || String(a).localeCompare(String(b)));
+    return { vals, counts, sel: x.f[g.key] };
+  }
+  const lab = (g, v) => g.label ? g.label(v) : String(v);
   function renderFilters() {
-    const sec = cur(), x = st(), host = $('#filters'), data = sec.data();
+    const sec = cur(), x = st(), host = $('#dds'), keepOpen = S.dd, keepQ = S.ddq || '';
     host.innerHTML = '';
     for (const g of sec.groups) {
-      const counts = new Map();
-      for (const r of data) { const v = r[g.key]; if (v !== '' && v != null && !counts.has(v)) counts.set(v, 0); }
-      for (const r of data) { const v = r[g.key]; if (v !== '' && v != null && pass(sec, r, g.key)) counts.set(v, counts.get(v) + 1); }
-      let vals = [...counts.keys()];
-      if (vals.length < 2 && !x.f[g.key].size) continue;
-      if (g.sort === 'key') vals.sort(); else if (g.sort === 'desc') vals.sort().reverse(); else if (typeof g.sort === 'function') vals.sort(g.sort); else vals.sort((a, b) => counts.get(b) - counts.get(a) || String(a).localeCompare(String(b)));
-      const row = document.createElement('div'); row.className = 'fgroup'; row.innerHTML = `<div class="name">${g.name}${g.single ? ' <span style="text-transform:none;font-weight:500">(escolha uma)</span>' : ''}</div><div class="chips"></div>`;
-      const box = row.querySelector('.chips'), ok = sec.id + g.key, lim = g.collapse && !S.open[ok] ? g.collapse : Infinity;
-      vals.forEach((v, i) => {
-        if (i >= lim && !x.f[g.key].has(v)) return;
-        const b = document.createElement('button'); b.className = 'chip' + (counts.get(v) ? '' : ' zero'); b.setAttribute('aria-pressed', x.f[g.key].has(v));
-        b.innerHTML = `${esc(g.label ? g.label(v) : v)} <span class="n">${int(counts.get(v))}</span>`;
-        b.onclick = () => { const s = x.f[g.key]; if (g.single) { s.clear(); s.add(v); } else s.has(v) ? s.delete(v) : s.add(v); x.page = 0; renderAll(); };
-        box.appendChild(b);
-      });
-      if (vals.length > lim) { const m = document.createElement('button'); m.className = 'fmore'; m.textContent = `+ ver todos (${vals.length})`; m.onclick = () => { S.open[ok] = true; renderFilters(); }; box.appendChild(m); }
-      else if (g.collapse && S.open[ok]) { const m = document.createElement('button'); m.className = 'fmore'; m.textContent = '− recolher'; m.onclick = () => { S.open[ok] = false; renderFilters(); }; box.appendChild(m); }
-      host.appendChild(row);
+      const { vals, counts, sel } = groupValues(sec, g);
+      if (vals.length < 2 && !sel.size) continue;
+      const dd = document.createElement('div'); dd.className = 'dd' + (keepOpen === g.key ? ' open' : ''); dd.dataset.k = g.key;
+      const n = sel.size, one = n === 1 ? lab(g, [...sel][0]) : '';
+      dd.innerHTML = `<button class="dd-btn${n && !g.single ? ' on' : ''}" type="button" aria-haspopup="true" aria-expanded="${keepOpen === g.key}">${esc(g.name)}${g.single && one ? `: <span class="val">${esc(one)}</span>` : n === 1 ? `: <span class="val">${esc(one)}</span>` : n > 1 ? ` <span class="badge">${n}</span>` : ''} <span class="car">▾</span></button>
+        <div class="dd-panel" role="dialog" aria-label="${esc(g.name)}">${vals.length > 8 ? `<input class="dd-s" type="search" placeholder="Procurar em ${esc(g.name.toLowerCase())}…" value="${esc(keepOpen === g.key ? keepQ : '')}">` : ''}
+        <div class="dd-acts"><span class="note">${vals.length} opções${g.single ? ' · escolha uma' : ''}</span>${g.single ? '' : `<span><button type="button" data-a="all">Marcar visíveis</button> · <button type="button" data-a="none">Limpar</button></span>`}</div>
+        <div class="dd-list">${vals.map(v => `<label class="dd-opt${counts.get(v) ? '' : ' zero'}" data-t="${esc(D0.norm(lab(g, v)))}"><input type="${g.single ? 'radio' : 'checkbox'}" name="dd-${g.key}" ${sel.has(v) ? 'checked' : ''} data-v="${esc(typeof v === 'number' ? 'n:' + v : v)}"><span class="t">${esc(lab(g, v))}</span><span class="n">${int(counts.get(v))}</span></label>`).join('')}</div></div>`;
+      const parse = s => s.startsWith('n:') ? +s.slice(2) : s;
+      const btn = dd.querySelector('.dd-btn'), panel = dd.querySelector('.dd-panel'), q = dd.querySelector('.dd-s');
+      btn.onclick = e => { e.stopPropagation(); const was = dd.classList.contains('open'); $$('.dd.open').forEach(d => d.classList.remove('open')); S.dd = was ? null : g.key; S.ddq = ''; if (!was) { dd.classList.add('open'); place(dd); q && q.focus(); } };
+      panel.onclick = e => e.stopPropagation();
+      const applyQ = () => { const t = D0.norm(q.value); S.ddq = q.value; panel.querySelectorAll('.dd-opt').forEach(o => o.style.display = !t || o.dataset.t.includes(t) ? '' : 'none'); };
+      if (q) { q.oninput = applyQ; if (keepOpen === g.key && keepQ) applyQ(); }
+      panel.querySelectorAll('input[data-v]').forEach(i => i.onchange = () => { const v = parse(i.dataset.v); if (g.single) { sel.clear(); sel.add(v); S.dd = null; } else i.checked ? sel.add(v) : sel.delete(v); x.page = 0; renderAll(); });
+      panel.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { if (b.dataset.a === 'none') sel.clear(); else panel.querySelectorAll('.dd-opt').forEach(o => { if (o.style.display !== 'none') sel.add(parse(o.querySelector('input').dataset.v)); }); x.page = 0; renderAll(); });
+      host.appendChild(dd);
+      if (keepOpen === g.key) { place(dd); const L = panel.querySelector('.dd-list'); if (S.ddScroll) L.scrollTop = S.ddScroll; L.onscroll = () => S.ddScroll = L.scrollTop; }
     }
-    host.style.display = host.children.length ? '' : 'none';
-    const n = Object.entries(x.f).reduce((a, [k, s]) => a + (sec.groups.find(g => g.key === k)?.single ? 0 : s.size), 0) + (x.de ? 1 : 0) + (x.ate ? 1 : 0) + (x.q ? 1 : 0);
-    $('#btnLimpar').disabled = !n; $('#btnLimpar').textContent = n ? `Limpar filtros (${n})` : 'Limpar filtros';
+    if (!host.children.length) host.innerHTML = '<span class="note" style="padding-top:7px">Sem filtros por grupo nesta seção. Use a busca.</span>';
+    // filtros ativos como etiquetas removíveis
+    const act = [];
+    for (const g of sec.groups) for (const v of x.f[g.key]) act.push(`<span class="achip"><small>${esc(g.name)}:</small> ${esc(lab(g, v))}${g.single ? '' : `<button type="button" title="Remover" data-k="${g.key}" data-v="${esc(typeof v === 'number' ? 'n:' + v : v)}">×</button>`}</span>`);
+    if (x.q) act.push(`<span class="achip"><small>Busca:</small> ${esc(x.q)}<button type="button" data-k="__q">×</button></span>`);
+    if (x.de || x.ate) act.push(`<span class="achip"><small>Período:</small> ${x.de ? br(x.de) : '…'} a ${x.ate ? br(x.ate) : '…'}<button type="button" data-k="__d">×</button></span>`);
+    const n = act.length - sec.groups.filter(g => g.single && x.f[g.key].size).length;
+    $('#fActive').innerHTML = act.length ? act.join('') + (n ? '<button class="aclear" id="btnLimpar" type="button">Limpar todos</button>' : '') : '';
+    $$('#fActive .achip button').forEach(b => b.onclick = () => { const k = b.dataset.k; if (k === '__q') { x.q = ''; x.qn = []; } else if (k === '__d') { x.de = x.ate = ''; } else { const v = b.dataset.v; x.f[k].delete(v.startsWith('n:') ? +v.slice(2) : v); } x.page = 0; renderAll(); });
+    const bl = $('#btnLimpar'); if (bl) bl.onclick = limpar;
   }
+  function place(dd) { const p = dd.querySelector('.dd-panel'); p.style.left = '0'; p.style.right = 'auto'; const r = p.getBoundingClientRect(); if (r.right > innerWidth - 8) { p.style.left = 'auto'; p.style.right = '0'; } }
+  document.addEventListener('click', () => { if (S.dd) { S.dd = null; $$('.dd.open').forEach(d => d.classList.remove('open')); } });
+  function limpar() { const sec = cur(), x = st(); sec.groups.forEach(g => { if (!g.single) x.f[g.key].clear(); }); if (sec.id === 'restr') x.f.origem.add('Planilha de Restrição'); x.de = x.ate = x.q = ''; x.qn = []; x.page = 0; renderAll(); }
   function only(key, v) { const x = st(), s = x.f[key]; if (!s) return; if (s.size === 1 && s.has(v)) s.clear(); else { s.clear(); s.add(v); } x.page = 0; renderAll(); }
 
   /* ---------- cabeçalho ---------- */
@@ -426,7 +446,7 @@
   }
   $('#pFechar').onclick = () => $('#pmodal').classList.remove('on');
   $('#pmodal').onclick = e => { if (e.target.id === 'pmodal') $('#pmodal').classList.remove('on'); };
-  addEventListener('keydown', e => { if (e.key === 'Escape') { $('#pmodal').classList.remove('on'); $('#modal').classList.remove('on'); } });
+  addEventListener('keydown', e => { if (e.key === 'Escape') { $('#pmodal').classList.remove('on'); $('#modal').classList.remove('on'); S.dd = null; $$('.dd.open').forEach(d => d.classList.remove('open')); } });
 
   /* ---------- exportação por seção ---------- */
   const xv = (ty, v, r) => ty === 'st' ? (r.status || r.grupo) : v == null ? '' : ty === 'd' ? br(v) : ty === 'dt' ? (/^\d{4}-\d{2}-\d{2}$/.test(v) ? br(v) : v) : ty === 'sem' ? semLabel(v) : typeof v === 'number' ? Math.round(v * 1e6) / 1e6 : v;
@@ -485,15 +505,14 @@
   /* ---------- controles ---------- */
   let qT; $('#q').oninput = e => { clearTimeout(qT); qT = setTimeout(() => { const x = st(); x.q = e.target.value.trim(); x.qn = D0.norm(x.q).split(' ').filter(Boolean); x.page = 0; renderAll(); }, 220); };
   $('#de').onchange = e => { st().de = e.target.value; st().page = 0; renderAll(); }; $('#ate').onchange = e => { st().ate = e.target.value; st().page = 0; renderAll(); };
-  $('#btnLimpar').onclick = () => { const sec = cur(), x = st(); sec.groups.forEach(g => { if (!g.single) x.f[g.key].clear(); }); if (sec.id === 'restr') x.f.origem.add('Planilha de Restrição'); x.de = x.ate = x.q = ''; x.qn = []; x.page = 0; renderAll(); };
   let rT; addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(renderAll, 150); });
   function renderAll() {
     const sec = cur(), x = st();
-    renderHeader(); $('#secTitle').textContent = sec.t; $('#secDesc').textContent = sec.desc;
+    renderHeader(); $('#secTitle').textContent = sec.t; $('#secDesc').textContent = sec.desc; $('#secIc').textContent = sec.ic; $('#secCrumb').textContent = sec.t;
     $('#q').placeholder = sec.placeholder; $('#q').value = x.q; $('#de').value = x.de; $('#ate').value = x.ate;
     $$('[data-dates]').forEach(e => e.style.display = sec.noDates ? 'none' : '');
     renderFilters(); const R = filtered(sec);
-    $('#fInfo').textContent = `${int(R.length)} de ${int(sec.data().length)} registros`;
+    $('#fInfo').innerHTML = `<b>${int(R.length)}</b>de ${int(sec.data().length)} registros`;
     V[sec.id](R); renderLista(R);
   }
 

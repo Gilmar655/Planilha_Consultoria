@@ -29,20 +29,20 @@
   <nav class="side" id="side" aria-label="Seções do painel"><div class="sidetitle">Acesso</div></nav>
   <main class="content" id="content">
     <div class="banner ok" id="bannerSaved" style="display:none">Exibindo a última planilha importada neste navegador.<button class="btn" id="btnOriginal">Voltar à base original do painel</button></div>
-    <div class="sechead"><div><h2 id="secTitle"></h2><p id="secDesc"></p></div></div>
-    <div class="toolbar">
-      <input class="search" id="q" type="search" placeholder="Buscar…" aria-label="Buscar">
-      <span class="lbl" data-dates>De</span><input class="date" type="date" id="de" aria-label="Data inicial" data-dates>
-      <span class="lbl" data-dates>até</span><input class="date" type="date" id="ate" aria-label="Data final" data-dates>
-      <button class="btn ghost" id="btnLimpar" disabled>Limpar filtros</button>
-      <span class="note" id="fInfo"></span>
-    </div>
-    <div class="toolbar">
-      <button class="btn primary" id="btnImport">⤒ Importar planilha (.xlsm / .xlsx)</button>
-      <button class="btn" id="btnXlsx">⤓ Exportar Excel desta seção</button>
-      <button class="btn" id="btnCsv">⤓ CSV da lista geral</button>
-    </div>
-    <section class="filters" id="filters" aria-label="Filtros"></section>
+    <section class="fbar" id="fbar" aria-label="Filtros">
+      <div class="fbar-top">
+        <div class="fsearch"><span aria-hidden="true">⌕</span><input id="q" type="search" placeholder="Buscar…" aria-label="Buscar"></div>
+        <div class="fdates" data-dates><label>De <input class="date" type="date" id="de" aria-label="Data inicial"></label><label>até <input class="date" type="date" id="ate" aria-label="Data final"></label></div>
+        <div class="factions">
+          <button class="btn primary" id="btnImport" title="Importar a Planilha de Planejamento START (.xlsm/.xlsx)">⤒ Importar</button>
+          <button class="btn" id="btnXlsx" title="Exportar Excel desta seção (lista + resumos)">⤓ Excel</button>
+          <button class="btn" id="btnCsv" title="Exportar CSV da lista geral">⤓ CSV</button>
+        </div>
+      </div>
+      <div class="fbar-dd"><span class="flabel">Filtros</span><div class="dds" id="dds"></div></div>
+      <div class="fbar-active" id="fActive"></div>
+    </section>
+    <div class="sechead"><div class="secic" id="secIc"></div><div><div class="crumb">Planejamento START <span>›</span> <b id="secCrumb"></b></div><h2 id="secTitle"></h2><p id="secDesc"></p></div><div class="secmeta" id="fInfo"></div></div>
     <div id="view"></div>
     <div class="card lista" id="lista"><h3>Lista geral <span class="cnt" id="listaCnt"></span></h3><p class="sub" id="listaSub"></p><div class="tablewrap" id="tLista" style="max-height:620px"></div><div class="pager" id="pgLista"></div></div>
   </main>
