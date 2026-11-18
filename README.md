@@ -26,13 +26,30 @@ Todas as seções têm, no topo, uma **barra de filtros fixa** (continua visíve
 
 ## Como atualizar os dados
 
-Abra o site, clique em **Importar planilha (.xlsm / .xlsx)** e escolha a versão mais nova. A leitura acontece no navegador: as macros não são executadas e nada é enviado para servidor nenhum. Com "Lembrar esta base" marcado, o painel abre com ela na próxima visita naquele navegador. A importação **não altera** o que está publicado aqui.
+### Atualização automática (robô do GitHub)
 
-Para atualizar a versão publicada, gere um novo `index.html` e substitua o arquivo no repositório:
+1. No repositório, clique em **Add file → Upload files**.
+2. Arraste a planilha nova (.xlsm ou .xlsx) e clique em **Commit changes**. O nome do arquivo pode ser qualquer um.
+3. Em cerca de 2 a 3 minutos o robô gera o site de novo e o publica. Acompanhe na aba **Actions** do repositório: ✅ verde = publicado.
+4. O resumo de cada execução (aba Actions → execução → Summary) mostra quantas linhas foram lidas de cada aba e as conferências (ex.: Semanas Programadas confere com as linhas).
+
+O robô usa a planilha enviada naquele upload. Para gerar de novo à mão: **Actions → Atualizar site com a planilha → Run workflow** (usa a planilha enviada mais recentemente).
+
+Dica: para o repositório não crescer a cada dia, apague as planilhas antigas (abra o arquivo → ⋯ → Delete file) ou envie sempre com o mesmo nome, que substitui a anterior.
+
+### Atualização pelo chat
+
+Anexe a planilha nova na conversa com o Claude e peça para atualizar o site: ele gera, confere e publica.
+
+### Só para consulta, sem publicar
+
+No site, clique em **Importar** e escolha a planilha. A leitura acontece no navegador: as macros não são executadas e nada é enviado para servidor nenhum. Com "Lembrar esta base" marcado, o painel abre com ela na próxima visita naquele navegador. Isso **não altera** o que está publicado.
+
+### Gerar no computador (opcional)
 
 ```bash
 pip install openpyxl
-python ferramentas/build.py "Planilha_de_Planejamento_START.xlsm" index.html "Planilha_de_Planejamento_START.xlsm"
+python ferramentas/atualizar_site.py "Planilha_de_Planejamento_START.xlsm"
 ```
 
 ## Atenção: repositório público
@@ -45,6 +62,7 @@ O painel deixa de fora LOG_USUARIOS, Controle de Acesso, o cadastro nominal de f
 
 - `index.html`: o painel completo (dados, estilos e scripts embutidos).
 - `assets/`: coloque aqui o `logo-enel.png`. Sem ele, aparece o selo em texto "Enel Brasil · Grids".
-- `ferramentas/`: `build.py`, `extrair.py` e o código-fonte em `src/`.
+- `ferramentas/`: `atualizar_site.py` (usado pelo robô), `build.py`, `extrair.py` e o código-fonte em `src/`.
+- `.github/workflows/atualizar-site.yml`: o robô que gera e publica o site quando uma planilha é enviada.
 - `versao-anterior-setembro-2026/`: o site que estava antes na raiz, guardado sem alterações.
 - `.nojekyll`: publica os arquivos como estão no GitHub Pages.
