@@ -137,7 +137,7 @@ const Data = (() => {
         const g = n => t.get(r, n);
         const ret = g('DATA DE RETORNO');
         const rec = {
-          origem, i, xr: t.xr[i], projeto: clean(g('Projeto')).toUpperCase(), id: clean(g('ID Execução')), familia: clean(g('familia_regen')),
+          origem, i, xr: t.xr[i], projeto: clean(g('Projeto')).toUpperCase(), nota: clean(g('Nota')), id: clean(g('ID Execução')), familia: clean(g('familia_regen')),
           data: toISO(g('DATA DE PROGRAMAÇÃO')), semana: num(g('SEMANA')), ano: num(g('ANO')), restricao: clean(g('RESTRIÇÃO')), descricao: clean(g('DESCRIÇÃO DA RESTRIÇÃO')),
           area: clean(g('ÁREA RESPONSÁVEL')), responsavel: clean(g('Responsável')), acao: clean(g('AÇÃO')), retorno: toISO(ret) || clean(ret), retornoTexto: clean(ret) !== '' && !toISO(ret),
           limite: toISO(g('DATA LIMITE PARA ELIMINAÇÃO DA RESTRIÇÃO')), eliminada: clean(g('RESTRIÇÃO ELIMINADA?')), justificativa: clean(g('JUSTIFICATIVA')),
@@ -203,8 +203,10 @@ const Data = (() => {
       const ids = new Set(e.map(r => r.id)), datas = e.map(r => r.data).filter(Boolean).sort();
       const comStatus = e.filter(r => ['Executado', 'Executado parcial', 'Cancelado'].includes(r.grupo));
       const pend = x.restr.filter(r => r.sit === 'Não eliminada' || r.sit === 'Sem resposta');
+      // notas técnicas do projeto: a da CARTEIRA primeiro, depois as das execuções e restrições
+      const notas = [...new Set([c.nota, ...e.map(r => r.nota), ...x.restr.map(r => r.nota)].filter(Boolean))];
       out.push({
-        projeto: x.projeto, naCarteira: !!x.cart, familia: c.familia || e[0]?.familia || x.restr[0]?.familia || '', resumo: c.resumo || '', statusObra: c.statusObra || '',
+        projeto: x.projeto, notas, naCarteira: !!x.cart, familia: c.familia || e[0]?.familia || x.restr[0]?.familia || '', resumo: c.resumo || '', statusObra: c.statusObra || '',
         prazo: c.prazo || e[e.length - 1]?.prazo || '', diasVenc: c.diasVenc ?? null, priorizacao: c.priorizacao || '', municipio: c.municipio || e[0]?.municipio || '',
         upsPlan: c.upsPlan ?? e.find(r => r.upsPlan != null)?.upsPlan ?? null, upsExecProj: c.upsExecProj ?? null,
         nExec: ids.size, nLinhas: e.length, upsProg: e.reduce((s, r) => s + r.upsProg, 0), upsExec: e.reduce((s, r) => s + r.upsExec, 0),

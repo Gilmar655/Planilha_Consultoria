@@ -28,13 +28,13 @@
   const legend = items => `<div class="legend">${items.map(([n, c]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('')}</div>`;
 
   /* ---------- colunas ---------- */
-  const C_EXEC = [['origem', 'Aba'], ['data', 'Data', 'd'], ['semKey', 'Semana', 'sem'], ['id', 'ID Execução'], ['projeto', 'Projeto', 'proj'], ['familia', 'Família'], ['tipoProgN', 'Tipo prog.'], ['pctPlan', '% plan.', 'pct'],
+  const C_EXEC = [['origem', 'Aba'], ['data', 'Data', 'd'], ['semKey', 'Semana', 'sem'], ['id', 'ID Execução'], ['projeto', 'Projeto', 'proj'], ['nota', 'Nota', 'nota'], ['familia', 'Família'], ['tipoProgN', 'Tipo prog.'], ['pctPlan', '% plan.', 'pct'],
     ['equipeCod', 'Equipe'], ['encarregado', 'Encarregado'], ['tipoEquipe', 'Tipo'], ['upsProg', 'UPS prog.', 'n2'], ['iniPrev', 'Início prev.'], ['fimPrev', 'Término prev.'], ['saidaBase', 'Saída base'],
     ['status', 'Status finalização', 'st'], ['pctExec', '% exec.', 'pct'], ['upsExec', 'UPS exec.', 'n2'], ['causa', 'Causa'], ['justificativa', 'Justificativa', 'wrap'], ['observacao', 'Observação', 'wrap'], ['restrPend', 'Restr. pend.', 'num'], ['prazo', 'Prazo'], ['municipio', 'Município']];
-  const C_CART = [['projeto', 'Projeto', 'proj'], ['resumo', 'Resumo contratada'], ['statusObra', 'Status obra'], ['prazo', 'Prazo'], ['diasVenc', 'Dias p/ venc.', 'num'], ['prazoFinal', 'Prazo final', 'd'],
+  const C_CART = [['projeto', 'Projeto', 'proj'], ['nota', 'Nota', 'nota'], ['resumo', 'Resumo contratada'], ['statusObra', 'Status obra'], ['prazo', 'Prazo'], ['diasVenc', 'Dias p/ venc.', 'num'], ['prazoFinal', 'Prazo final', 'd'],
     ['priorizacao', 'Priorização MV'], ['familia', 'Família'], ['tipoProjeto', 'Tipo projeto'], ['upsPlan', 'Ups_Plan', 'n2'], ['upsExecProj', 'Ups_Exec_Projeto', 'n2'], ['programar', 'Programar?'], ['qtdProg', 'Qtd prog.', 'num'],
     ['ultimaData', 'Última data prog.', 'd'], ['sigeoStatus', 'Status prog. SIGEO'], ['sigeoData', 'Data SIGEO', 'd'], ['sigeoTipo', 'Tipo interv.'], ['powerOn', 'PowerON'], ['municipio', 'Município'], ['bairro', 'Bairro'], ['circuito', 'Circuito'], ['devolutiva', 'Devolutiva ENEL', 'wrap'], ['obs', 'Observações', 'wrap']];
-  const C_RESTR = [['origem', 'Aba'], ['semKey', 'Semana', 'sem'], ['data', 'Data prog.', 'd'], ['projeto', 'Projeto', 'proj'], ['id', 'ID Execução'], ['familia', 'Família'], ['restricao', 'Restrição'], ['descricao', 'Descrição', 'wrap'], ['area', 'Área'], ['responsavel', 'Responsável'], ['acao', 'Ação', 'wrap'], ['retorno', 'Retorno', 'dt'], ['limite', 'Limite', 'd'], ['sit', 'Situação'], ['justificativa', 'Justificativa', 'wrap']];
+  const C_RESTR = [['origem', 'Aba'], ['semKey', 'Semana', 'sem'], ['data', 'Data prog.', 'd'], ['projeto', 'Projeto', 'proj'], ['nota', 'Nota', 'nota'], ['id', 'ID Execução'], ['familia', 'Família'], ['restricao', 'Restrição'], ['descricao', 'Descrição', 'wrap'], ['area', 'Área'], ['responsavel', 'Responsável'], ['acao', 'Ação', 'wrap'], ['retorno', 'Retorno', 'dt'], ['limite', 'Limite', 'd'], ['sit', 'Situação'], ['justificativa', 'Justificativa', 'wrap']];
   const C_INSTR = [['n', 'Nº', 'num'], ['secao', 'Seção'], ['tipoL', 'Tipo'], ['item', 'Item'], ['texto', 'Texto', 'wrap']];
 
   /* ---------- seções ---------- */
@@ -45,7 +45,7 @@
     { key: 'causa', name: 'Causa', collapse: 10 }, { key: 'municipioN', name: 'Município' }, { key: 'prazo', name: 'Prazo (ENEL)' }, { key: 'origem', name: 'Aba de origem' }];
   const SEC = [
     { id: 'visao', ic: '◧', t: 'Visão geral', desc: 'Programação e execução de todas as semanas (abas Histórico + Base Programada), com desempenho, causas, equipes mobilizadas e a qualidade dos dados.', groups: G_EXEC, date: r => r.data, data: () => S.D.exec,
-      hay: r => [r.projeto, r.id, r.encarregado, r.equipeCod, r.causa, r.justificativa, r.observacao, r.familia, r.municipio], cols: C_EXEC, sub: 'Uma linha por equipe por execução (Histórico + Base Programada).', placeholder: 'Buscar projeto, ID de execução, encarregado, causa, justificativa…' },
+      hay: r => [r.projeto, r.nota, r.id, r.encarregado, r.equipeCod, r.causa, r.justificativa, r.observacao, r.familia, r.municipio], cols: C_EXEC, sub: 'Uma linha por equipe por execução (Histórico + Base Programada).', placeholder: 'Buscar projeto, nota, ID de execução, encarregado, causa, justificativa…' },
     { id: 'instr', ic: '☰', t: 'Instruções', desc: 'Manual da planilha (aba Instruções): fluxo da semana, regras, status, termos e botões. Use a busca para achar uma regra ou um termo.', groups: [{ key: 'secao', name: 'Seção', sort: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0) }, { key: 'tipoL', name: 'Tipo' }], data: () => S.D.instr.filter(i => i.tipo !== 'secao'),
       hay: r => [r.secao, r.item, r.texto], cols: C_INSTR, sub: 'Todas as linhas do manual, na ordem da planilha.', noDates: true, placeholder: 'Buscar no manual (ex.: % Executado, CANCELADO ENEL, restrição)…' },
     { id: 'cart', ic: '▤', t: 'Carteira', desc: 'Obras da aba CARTEIRA: situação, prazo, priorização, UPS previsto e executado (ENEL) e programação no SIGEO.', groups: [
@@ -54,7 +54,7 @@
       { key: 'tipoExec', name: 'Tipo exec.', collapse: 8 }, { key: 'sigeoStatus', name: 'Status prog. SIGEO' }, { key: 'municipioN', name: 'Município' }, { key: 'programar', name: 'Programar?' }],
       date: r => r.ultimaData, data: () => S.D.cart, hay: r => [r.projeto, r.nota, r.tipoProjeto, r.circuito, r.bairro, r.municipio, r.obs, r.devolutiva, r.equipamentos, r.localInst, r.powerOn], cols: C_CART, sub: 'Todas as obras da CARTEIRA. Datas filtram pela "Última Data Programação". Clique numa obra para ver o histórico.', placeholder: 'Buscar projeto, nota, circuito, bairro, observação…' },
     { id: 'bp', ic: '▦', t: 'Base Programada', desc: 'Programação da semana atual e das próximas (aba Base Programada), uma linha por equipe.', groups: G_EXEC.filter(g => !['origem', 'mes'].includes(g.key)).concat([{ key: 'restrPendF', name: 'Restrições pendentes' }]), date: r => r.data,
-      data: () => S.D.exec.filter(r => r.origem === 'Base Programada'), hay: r => [r.projeto, r.id, r.encarregado, r.equipeCod, r.causa, r.justificativa, r.observacao, r.familia], cols: C_EXEC.filter(c => c[0] !== 'origem'), sub: 'Todas as linhas da aba Base Programada.', placeholder: 'Buscar projeto, ID, encarregado…' },
+      data: () => S.D.exec.filter(r => r.origem === 'Base Programada'), hay: r => [r.projeto, r.nota, r.id, r.encarregado, r.equipeCod, r.causa, r.justificativa, r.observacao, r.familia], cols: C_EXEC.filter(c => c[0] !== 'origem'), sub: 'Todas as linhas da aba Base Programada.', placeholder: 'Buscar projeto, ID, encarregado…' },
     { id: 'eqp', ic: '▣', t: 'Equipes programadas', desc: 'Equipes × dias da semana escolhida, como na aba Equipes programadas, com UPS da semana, mínimo e horizonte. Vale para qualquer semana (Histórico + Base).', groups: [
       { key: 'semKey', name: 'Semana', label: semLabel, sort: 'desc', collapse: 14, single: true }, { key: 'tipoEquipe', name: 'Tipo de equipe' }, { key: 'encarregado', name: 'Encarregado', collapse: 12 }, { key: 'grupo', name: 'Resultado', sort: order(SIT_EXEC) }, { key: 'familia', name: 'Família', collapse: 8 }],
       date: r => r.data, data: () => S.D.exec, hay: r => [r.projeto, r.id, r.encarregado, r.equipeCod], cols: [['data', 'Data', 'd'], ['dia', 'Dia'], ['equipeCod', 'Equipe'], ['encarregado', 'Encarregado'], ['tipoEquipe', 'Tipo'], ['projeto', 'Projeto', 'proj'], ['id', 'ID Execução'], ['iniPrev', 'Início prev.'], ['fimPrev', 'Término prev.'], ['upsProg', 'UPS prog.', 'n2'], ['status', 'Status', 'st'], ['pctExec', '% exec.', 'pct'], ['upsExec', 'UPS exec.', 'n2'], ['causa', 'Causa'], ['origem', 'Aba']],
@@ -62,7 +62,7 @@
     { id: 'restr', ic: '⚑', t: 'Planilha de Restrição', desc: 'Restrições por obra e semana (aba Planilha de Restrição). Para incluir semanas encerradas, ative "Histórico Restrições" no filtro Aba de origem.', groups: [
       { key: 'semKey', name: 'Semana', label: semLabel, sort: 'desc', collapse: 14 }, { key: 'sit', name: 'Situação', sort: order(SIT_RESTR) }, { key: 'restricao', name: 'Restrição' }, { key: 'area', name: 'Área responsável' },
       { key: 'responsavel', name: 'Responsável', collapse: 10 }, { key: 'familia', name: 'Família', collapse: 10 }, { key: 'origem', name: 'Aba de origem' }],
-      date: r => r.data, data: () => S.D.restr, hay: r => [r.projeto, r.id, r.restricao, r.descricao, r.responsavel, r.acao, r.justificativa], cols: C_RESTR, sub: 'Restrições nos filtros atuais.', placeholder: 'Buscar projeto, restrição, ação, justificativa…' },
+      date: r => r.data, data: () => S.D.restr, hay: r => [r.projeto, r.nota, r.id, r.restricao, r.descricao, r.responsavel, r.acao, r.justificativa], cols: C_RESTR, sub: 'Restrições nos filtros atuais.', placeholder: 'Buscar projeto, restrição, ação, justificativa…' },
     { id: 'painel', ic: '◉', t: 'Painel Restrições', desc: 'Como a aba Painel Restrições: % eliminadas da próxima semana (meta 90%) e restrições pendentes por obra nas próximas 8 semanas. Pendente = "Não eliminada" ou sem resposta.', groups: [
       { key: 'restricao', name: 'Restrição' }, { key: 'area', name: 'Área responsável' }, { key: 'familia', name: 'Família', collapse: 10 }], data: () => S.D.restr, hay: r => [r.projeto, r.restricao, r.responsavel, r.acao],
       cols: [['semKey', 'Semana', 'sem'], ['projeto', 'Obra', 'proj'], ['sitObra', 'Situação da obra'], ['restricao', 'Restrição'], ['sit', 'Situação'], ['area', 'Área'], ['responsavel', 'Responsável'], ['acao', 'Ação', 'wrap'], ['retorno', 'Retorno', 'dt'], ['limite', 'Limite', 'd'], ['justificativa', 'Justificativa', 'wrap']],
@@ -77,7 +77,8 @@
   /* ---------- carga ---------- */
   function carregar(abas, meta) {
     S.raw = Object.fromEntries(abas.map(a => [D0.norm(a.aba), a])); for (const k in modelos) delete modelos[k];
-    S.D = D0.build(abas); S.P = D0.projetos(S.D); S.Pmap = new Map(S.P.map(p => [p.projeto, p])); S.Q = D0.qualidade(S.D); Object.assign(S, meta);
+    S.D = D0.build(abas); S.P = D0.projetos(S.D); S.Pmap = new Map(S.P.map(p => [p.projeto, p]));
+    S.Nmap = new Map(); S.P.forEach(p => p.notas.forEach(n => { if (!S.Nmap.has(n)) S.Nmap.set(n, []); S.Nmap.get(n).push(p.projeto); })); S.Q = D0.qualidade(S.D); Object.assign(S, meta);
     S.D.exec.forEach(r => { r.dia = r.data ? D0.diaSem(r.data) : ''; r.restrPendF = r.restrPend == null ? '' : r.restrPend === 0 ? 'Nenhuma' : r.restrPend <= 3 ? '1 a 3' : '4 ou mais'; });
     S.D.instr.forEach(i => { i.tipoL = { fluxo: 'Fluxo', regra: 'Regra', termo: 'Termo / status', texto: 'Texto', cabecalho: 'Apresentação' }[i.tipo] || i.tipo; i.item = i.tipo === 'termo' ? i.termo : i.tipo === 'regra' ? i.icone : i.tipo === 'fluxo' ? 'Passos' : ''; if (i.tipo === 'fluxo') i.texto = i.cols.join(' | '); });
     S.hoje = isoWeek(S.D.hoje);
@@ -176,6 +177,7 @@
     if (type === 'd') return br(v); if (type === 'dt') return /^\d{4}-\d{2}-\d{2}$/.test(v) ? br(v) : esc(v); if (type === 'n2') return nf(v); if (type === 'pct') return pc(v, 0);
     if (type === 'num') return typeof v === 'number' ? v.toLocaleString('pt-BR') : esc(v); if (type === 'sem') return semLabel(v);
     if (type === 'proj') return `<a href="#" class="mono" data-p="${esc(v)}">${esc(v)}</a>`;
+    if (type === 'nota') return r.projeto && S.Pmap.has(r.projeto) ? `<a href="#" class="mono" data-p="${esc(r.projeto)}" data-n="${esc(v)}" title="Ver os projetos desta nota">${esc(v)}</a>` : esc(v);
     return esc(v);
   }
   const isNum = ty => ['num', 'n2', 'pct'].includes(ty);
@@ -186,7 +188,7 @@
     const pg = per ? L.slice(page * per, page * per + per) : L;
     host.innerHTML = `<table><thead><tr>${cols.map(([c, t, ty]) => `<th class="${isNum(ty) ? 'num' : ''}" data-k="${c}">${t}${k === c ? `<span class="arr">${dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('')}</tr></thead><tbody>${pg.map(r => `<tr>${cols.map(([c, , ty]) => `<td class="${isNum(ty) ? 'num' : ty === 'wrap' ? 'wrap' : ''}">${cell(ty, r[c], r)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length}" class="empty">Nada nos filtros atuais.</td></tr>`}</tbody></table>`;
     host.querySelectorAll('th').forEach(h => h.onclick = () => { const c = h.dataset.k; onSort([c, k === c ? -dir : (typeof L.find(r => r[c] != null && r[c] !== '')?.[c] === 'number' ? -1 : 1)]); });
-    host.querySelectorAll('a[data-p]').forEach(a => a.onclick = e => { e.preventDefault(); abrirProjeto(a.dataset.p); });
+    host.querySelectorAll('a[data-p]').forEach(a => a.onclick = e => { e.preventDefault(); abrirProjeto(a.dataset.p, a.dataset.n); });
     if (pager) {
       pager.innerHTML = per ? `<span>${int(L.length)} linhas · página ${page + 1} de ${pages}</span><button class="btn" data-a="-1" ${page ? '' : 'disabled'}>‹ Anterior</button><button class="btn" data-a="1" ${page < pages - 1 ? '' : 'disabled'}>Próxima ›</button>` : '';
       pager.querySelectorAll('button').forEach(b => b.onclick = () => onPage(page + +b.dataset.a));
@@ -470,6 +472,7 @@
     if (!m) { host.innerHTML = '<h3>Aba da planilha</h3><div class="empty">Aba não encontrada no arquivo carregado.</div>'; return; }
     const mp = MAPA[L.aba], podeAplicar = mp && mp.sec === sec.id, per = 100, pages = Math.max(1, Math.ceil(rows.length / per)); L.page = Math.min(L.page, pages - 1);
     const pg = rows.slice(L.page * per, L.page * per + per);
+    const colNota = m.cols.map(k => m.mode === 'tabela' && D0.norm(k.t) === 'NOTA');
     const filtrada = L.qn.length || (L.aplicar && podeAplicar);
     host.innerHTML = `<div class="lhead"><div><h3>Aba «${esc(L.aba)}» da planilha original <span class="cnt">· ${int(m.body.length)} linhas com dados · ${m.cols.length} colunas${m.vis ? ' · ' + esc(m.vis.toLowerCase()) + ' na planilha' : ''}</span></h3>
       <p class="sub">${filtrada ? `<b style="color:var(--warn)">Mostrando ${int(rows.length)} de ${int(m.body.length)} linhas</b> (busca ou filtros aplicados).` : '<b style="color:var(--brand-ink)">100% da aba</b>: todas as linhas e colunas com conteúdo, com os valores e formatos da planilha (sem colunas criadas pelo painel).'} ${m.mode === 'tabela' ? `Cabeçalho na linha ${m.hdrLinha}; "Linha" = número da linha no Excel.` : 'Espelho da aba: linhas e colunas como no Excel.'}${m.omitido ? ' ' + esc(m.omitido) : ''}</p></div></div>
@@ -479,7 +482,10 @@
         <button class="btn" id="lX" type="button">⤓ Excel desta aba</button><button class="btn" id="lC" type="button">⤓ CSV</button></div>
       ${m.mode === 'tabela' && m.topo.length ? `<details class="ltopo"><summary>Conteúdo acima da tabela (linhas ${m.topo.map(r => r + 1).join(', ')})</summary><div class="tablewrap" style="max-height:260px"><table><thead><tr><th>Linha</th>${Array.from({ length: m.topoCols }, (_, c) => `<th>${colL(c)}</th>`).join('')}</tr></thead><tbody>${m.topo.map(r => `<tr><td class="num">${r + 1}</td>${Array.from({ length: m.topoCols }, (_, c) => `<td class="wrap">${esc(m.cel(r, c))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>` : ''}
       <div class="tablewrap ltab" style="max-height:640px"><table><thead><tr><th class="num">Linha</th>${m.cols.map((k, i) => `<th data-i="${i}" title="Coluna ${k.L || k.t}">${esc(k.t)}${k.L ? `<span class="cl">${k.L}</span>` : ''}${L.sort && L.sort[0] === i ? `<span class="arr">${L.sort[1] > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('')}</tr></thead>
-      <tbody>${pg.map(b => `<tr><td class="num ln">${b.r}</td>${b.v.map((v, i) => { const isN = typeof b.raw[i] === 'number'; const proj = typeof b.raw[i] === 'string' && S.Pmap.has(b.raw[i].trim().toUpperCase()); return `<td class="${isN ? 'num' : String(v).length > 60 ? 'wrap' : ''}">${proj ? `<a href="#" class="mono" data-p="${esc(b.raw[i].trim().toUpperCase())}">${esc(v)}</a>` : esc(v)}</td>`; }).join('')}</tr>`).join('') || `<tr><td colspan="${m.cols.length + 1}" class="empty">Nenhuma linha com essa busca.</td></tr>`}</tbody></table></div>
+      <tbody>${pg.map(b => { const pj = b.raw.find(x => typeof x === 'string' && S.Pmap.has(x.trim().toUpperCase())); const pr = pj ? pj.trim().toUpperCase() : '';
+        return `<tr><td class="num ln">${b.r}</td>${b.v.map((v, i) => { const isN = typeof b.raw[i] === 'number'; const proj = typeof b.raw[i] === 'string' && S.Pmap.has(b.raw[i].trim().toUpperCase());
+          const nt = colNota[i] && String(b.raw[i] ?? '').trim(), np = nt && S.Nmap.has(nt) ? (pr && S.Pmap.get(pr).notas.includes(nt) ? pr : S.Nmap.get(nt)[0]) : '';
+          return `<td class="${isN && !np ? 'num' : String(v).length > 60 ? 'wrap' : ''}">${proj ? `<a href="#" class="mono" data-p="${esc(b.raw[i].trim().toUpperCase())}">${esc(v)}</a>` : np ? `<a href="#" class="mono" data-p="${esc(np)}" data-n="${esc(nt)}" title="Ver os projetos desta nota">${esc(v)}</a>` : esc(v)}</td>`; }).join('')}</tr>`; }).join('') || `<tr><td colspan="${m.cols.length + 1}" class="empty">Nenhuma linha com essa busca.</td></tr>`}</tbody></table></div>
       <div class="pager"><span>${int(rows.length)} linhas · página ${L.page + 1} de ${pages}</span><button class="btn" data-a="-1" ${L.page ? '' : 'disabled'}>‹ Anterior</button><button class="btn" data-a="1" ${L.page < pages - 1 ? '' : 'disabled'}>Próxima ›</button></div>`;
     const re = () => renderLista(R);
     const sel = $('#lAba'); if (sel) sel.onchange = () => { L.aba = sel.value; L.page = 0; L.sort = null; L.aplicar = false; re(); };
@@ -487,7 +493,7 @@
     const ap = $('#lAp'); if (ap) ap.onchange = () => { L.aplicar = ap.checked; L.page = 0; re(); };
     host.querySelectorAll('.ltab th[data-i]').forEach(h => h.onclick = () => { const i = +h.dataset.i; L.sort = L.sort && L.sort[0] === i ? [i, -L.sort[1]] : [i, 1]; re(); });
     host.querySelectorAll('.pager button').forEach(b => b.onclick = () => { L.page += +b.dataset.a; re(); host.scrollIntoView({ block: 'start' }); });
-    host.querySelectorAll('a[data-p]').forEach(a => a.onclick = e => { e.preventDefault(); abrirProjeto(a.dataset.p); });
+    host.querySelectorAll('a[data-p]').forEach(a => a.onclick = e => { e.preventDefault(); abrirProjeto(a.dataset.p, a.dataset.n); });
     $('#lX').onclick = () => IO.download(IO.xlsxOf(abaSheets(m, rows)), `${arqNome(L.aba)}_${stampNow()}.xlsx`);
     $('#lC').onclick = () => { const s = abaSheet(m, rows); IO.download(new Blob([IO.csvOf(s.header, s.data.map((r, ri) => r.map((v, ci) => ci === 0 ? v : rows[ri].v[ci - 1])))], { type: 'text/csv;charset=utf-8' }), `${arqNome(L.aba)}_${stampNow()}.csv`); };
   }
@@ -508,16 +514,17 @@
   }
 
   /* ---------- detalhe do projeto (janela) ---------- */
-  function abrirProjeto(cod) {
+  function abrirProjeto(cod, notaAberta) {
     const p = S.Pmap.get(cod); if (!p) return; const c = p.cart || {};
     $('#dTitulo').textContent = p.projeto;
+    renderNotas(p, notaAberta && p.notas.includes(notaAberta) ? notaAberta : null);
     $('#dSub').innerHTML = [p.familia, c.tipoProjeto, c.municipio && `${c.bairro ? c.bairro + ' · ' : ''}${c.municipio}`, c.circuito && 'Circuito ' + c.circuito, p.naCarteira ? 'Na CARTEIRA' : 'Fora da CARTEIRA atual'].filter(Boolean).map(esc).join(' · ');
     const F = [['Resumo contratada', c.resumo], ['Status obra', c.statusObra], ['Prazo', c.prazo ? `${c.prazo}${c.diasVenc != null ? ` (${c.diasVenc} dias)` : ''}` : ''], ['Prazo final', br(c.prazoFinal)], ['Priorização MV', c.priorizacao],
       ['Ups_Plan (ENEL)', p.upsPlan != null ? nf(p.upsPlan) : ''], ['Ups_Exec_Projeto (ENEL)', p.upsExecProj != null ? nf(p.upsExecProj) : ''], ['UPS programado (planilha)', nf(p.upsProg)], ['UPS executado (planilha)', nf(p.upsExec)],
       ['Execuções', p.nExec], ['Período', p.primeira ? `${br(p.primeira)} a ${br(p.ultima)}` : ''], ['Programação SIGEO', c.sigeoData ? `${br(c.sigeoData)} · ${c.sigeoStatus || ''} · ${c.sigeoTipo || ''}` : ''], ['PowerON', c.powerOn], ['CHI', c.chi], ['Restrições lançadas', p.nRestr]].filter(f => f[1] !== '' && f[1] != null);
     $('#dFacts').innerHTML = F.map(([t, v]) => `<div class="fact"><div class="t">${t}</div><div class="v">${esc(v)}</div></div>`).join('');
     $('#dObs').innerHTML = [c.obs && `<b>Observações:</b> ${esc(c.obs)}`, c.devolutiva && `<b>Devolutiva ENEL:</b> ${esc(c.devolutiva)}`].filter(Boolean).join('<br>');
-    $('#pmodal').classList.add('on');
+    $('#pmodal').classList.add('on'); $('#pmodal .box').scrollTop = 0;
     const ds = [...new Set(p.exec.map(r => r.data).filter(Boolean))].sort();
     Charts.columns($('#chProj'), ds.map(d => d.slice(8, 10) + '/' + d.slice(5, 7)), [{ name: 'UPS programado', color: css('--s1'), values: ds.map(d => sum(p.exec.filter(r => r.data === d), r => r.upsProg)) }, { name: 'UPS executado', color: css('--s3'), values: ds.map(d => sum(p.exec.filter(r => r.data === d), r => r.upsExec)) }], { grouped: true, unit: 'UPS', height: 220, sublabels: ds.map(d => d.slice(0, 4)), tipTitle: i => `${br(ds[i])} (${D0.diaSem(ds[i])})` });
     const rs = p.restr;
@@ -529,6 +536,25 @@
     }).join('') : '<li><div></div><div class="note">Projeto sem programação no Histórico nem na Base Programada.</div></li>';
     const pend = rs.filter(r => r.sit === 'Não eliminada' || r.sit === 'Sem resposta').sort((a, b) => b.semKey.localeCompare(a.semKey));
     $('#dRestr').innerHTML = pend.length ? `<table><thead><tr><th>Semana</th><th>Restrição</th><th>Situação</th><th>Área</th><th>Responsável</th><th>Ação</th><th>Retorno</th><th>Justificativa</th></tr></thead><tbody>${pend.map(r => `<tr><td>${semLabel(r.semKey)}</td><td>${esc(r.restricao)}</td><td>${esc(r.sit)}</td><td>${esc(r.area)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.acao)}</td><td>${esc(/^\d{4}-/.test(r.retorno) ? br(r.retorno) : r.retorno)}</td><td class="wrap">${esc(r.justificativa)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nenhuma restrição pendente registrada para este projeto.</div>';
+  }
+  /* nota técnica: botões com as notas do projeto; o clique mostra todos os projetos com a mesma nota */
+  function renderNotas(p, aberta) {
+    const host = $('#dNotas');
+    if (!p.notas.length) { host.innerHTML = '<span class="note">Nota técnica: não informada na planilha.</span>'; return; }
+    host.innerHTML = `<span class="note">Nota técnica${p.notas.length > 1 ? 's' : ''}:</span> ${p.notas.map(n => { const q = (S.Nmap.get(n) || []).length;
+      return `<button type="button" class="notab mono${n === aberta ? ' on' : ''}" data-n="${esc(n)}" aria-expanded="${n === aberta}" title="Ver os projetos associados a esta nota">${esc(n)} <span class="nq">${q} projeto${q > 1 ? 's' : ''}</span></button>`; }).join(' ')}
+      ${aberta ? notaPainel(aberta, p.projeto) : ''}`;
+    host.querySelectorAll('.notab').forEach(b => b.onclick = () => renderNotas(p, b.dataset.n === aberta ? null : b.dataset.n));
+    host.querySelectorAll('a[data-p]').forEach(a => a.onclick = e => { e.preventDefault(); abrirProjeto(a.dataset.p, a.dataset.n); });
+  }
+  function notaPainel(n, atual) {
+    const L = (S.Nmap.get(n) || []).map(k => S.Pmap.get(k)).filter(Boolean).sort((a, b) => (b.ultima || '').localeCompare(a.ultima || '') || a.projeto.localeCompare(b.projeto));
+    const tot = (f) => nf(sum(L, f));
+    return `<div class="notapainel"><h4>Projetos associados à nota <span class="mono">${esc(n)}</span> · ${L.length}</h4>
+      <p class="sub">${L.length > 1 ? 'Clique num projeto para abrir o histórico dele.' : 'Só este projeto tem esta nota na planilha.'} Junta CARTEIRA, Histórico, Base Programada e restrições.</p>
+      <div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Projeto</th><th>Resumo contratada</th><th>Status obra</th><th>Prazo</th><th class="num">Ups_Plan</th><th class="num">UPS prog.</th><th class="num">UPS exec.</th><th class="num">Execuções</th><th>Última prog.</th><th class="num">Restr. pend.</th><th>Carteira</th></tr></thead>
+      <tbody>${L.map(q => `<tr${q.projeto === atual ? ' class="atual"' : ''}><td>${q.projeto === atual ? `<b class="mono">${esc(q.projeto)}</b> <span class="note">(este)</span>` : `<a href="#" class="mono" data-p="${esc(q.projeto)}" data-n="${esc(n)}">${esc(q.projeto)}</a>`}</td><td>${esc(q.resumo)}</td><td>${esc(q.statusObra)}</td><td>${esc(q.prazo)}</td><td class="num">${q.upsPlan != null ? nf(q.upsPlan) : ''}</td><td class="num">${nf(q.upsProg)}</td><td class="num">${nf(q.upsExec)}</td><td class="num">${q.nExec}</td><td>${br(q.ultima)}</td><td class="num">${q.nPend || ''}</td><td>${q.naCarteira ? 'Sim' : 'Não'}</td></tr>`).join('')}</tbody>
+      ${L.length > 1 ? `<tfoot><tr><td colspan="4"><b>Total da nota</b></td><td class="num">${tot(q => q.upsPlan || 0)}</td><td class="num">${tot(q => q.upsProg)}</td><td class="num">${tot(q => q.upsExec)}</td><td class="num">${sum(L, q => q.nExec)}</td><td></td><td class="num">${sum(L, q => q.nPend) || ''}</td><td></td></tr></tfoot>` : ''}</table></div></div>`;
   }
   $('#pFechar').onclick = () => $('#pmodal').classList.remove('on');
   $('#pmodal').onclick = e => { if (e.target.id === 'pmodal') $('#pmodal').classList.remove('on'); };
