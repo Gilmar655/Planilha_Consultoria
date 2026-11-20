@@ -16,7 +16,26 @@ Desenvolvido por **Gilmar Campos**, Técnico – Gestão de Programação · Ene
 | **Planilha de Restrição** | % eliminadas por semana (meta 90%), situação por tipo, pendências por área, responsável e obra. |
 | **Painel Restrições** | O mesmo cálculo da aba Painel Restrições: % eliminadas da próxima semana e pendências por obra nas próximas 8 semanas (Nova / Veio da sem. anterior). |
 
-Todas as seções têm, no topo, uma **barra de filtros fixa** (continua visível ao rolar): busca, período, **Importar**, **Excel** e **CSV**. Cada grupo de filtro (Semana, Resultado, Família, Encarregado…) é um **menu suspenso** com caixas de seleção, contagem por opção e busca interna. Os filtros ativos aparecem como etiquetas removíveis. No fim da página fica a **lista geral** dos registros. Clicar num projeto abre o histórico dele (CARTEIRA + execuções + restrições).
+Todas as seções têm, no topo, uma **barra de filtros fixa** (continua visível ao rolar): busca, período, **Importar**, **Excel** e **CSV**. Cada grupo de filtro (Semana, Resultado, Família, Encarregado…) é um **menu suspenso** com caixas de seleção, contagem por opção e busca interna. Os filtros ativos aparecem como etiquetas removíveis. No fim da página fica a **aba original completa** da planilha (veja abaixo). Clicar num projeto abre o histórico dele (CARTEIRA + execuções + restrições).
+
+## Aba original completa no rodapé de cada seção
+
+No fim de cada seção aparece a aba correspondente da planilha **por inteiro**: todas as linhas e todas as colunas com conteúdo, com os valores e os formatos da planilha (%, casas decimais, datas e horas), sem colunas criadas pelo painel. A coluna "Linha" é o número da linha no Excel. Se a aba tiver conteúdo acima da tabela (títulos, parâmetros), ele aparece em "Conteúdo acima da tabela".
+
+| Seção | Aba mostrada no rodapé |
+|---|---|
+| Visão geral | Histórico, com seletor para Semanas Programadas, Equipes Mobilizadas, Registros Semanais, Analise_core team, Causas Cancel-Parcial, Histórico Restrições, Verificação, Auxiliar Rest. e Auxiliar ListSusp |
+| Instruções | Instruções |
+| Carteira | CARTEIRA |
+| Base Programada | Base Programada |
+| Equipes programadas | Equipes programadas |
+| Planilha de Restrição | Planilha de Restrição (e Histórico Restrições no seletor) |
+| Painel Restrições | Painel Restrições |
+
+- Por padrão a lista mostra **100% da aba**. A busca da própria lista e a opção "Aplicar os filtros do topo" reduzem as linhas exibidas, e o aviso mostra quantas de quantas.
+- **Excel desta aba** baixa a aba completa (ou só as linhas filtradas, se houver filtro), com os mesmos formatos.
+- Conferência feita célula por célula: das 17 abas exibidas, nenhuma célula falta e nenhuma foi criada. Vale tanto para a base publicada quanto para uma planilha importada pelo botão Importar.
+- Ficam de fora só: **LOG_USUARIOS** (registro de acesso de pessoas), **Controle de Acesso** (configuração de segurança) e as colunas do cadastro nominal de funcionários da aba Auxiliar ListSusp (Table10: Equipes, Código, REGISTRO, NOME, CARGO, Horário de inicio).
 
 ## Regras de cálculo (as mesmas da planilha)
 

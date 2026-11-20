@@ -76,11 +76,12 @@
 
   /* ---------- carga ---------- */
   function carregar(abas, meta) {
+    S.raw = Object.fromEntries(abas.map(a => [D0.norm(a.aba), a])); for (const k in modelos) delete modelos[k];
     S.D = D0.build(abas); S.P = D0.projetos(S.D); S.Pmap = new Map(S.P.map(p => [p.projeto, p])); S.Q = D0.qualidade(S.D); Object.assign(S, meta);
     S.D.exec.forEach(r => { r.dia = r.data ? D0.diaSem(r.data) : ''; r.restrPendF = r.restrPend == null ? '' : r.restrPend === 0 ? 'Nenhuma' : r.restrPend <= 3 ? '1 a 3' : '4 ou mais'; });
     S.D.instr.forEach(i => { i.tipoL = { fluxo: 'Fluxo', regra: 'Regra', termo: 'Termo / status', texto: 'Texto', cabecalho: 'Apresentação' }[i.tipo] || i.tipo; i.item = i.tipo === 'termo' ? i.termo : i.tipo === 'regra' ? i.icone : i.tipo === 'fluxo' ? 'Passos' : ''; if (i.tipo === 'fluxo') i.texto = i.cols.join(' | '); });
     S.hoje = isoWeek(S.D.hoje);
-    for (const id in S.st) { const x = S.st[id]; for (const k in x.f) x.f[k].clear(); x.page = 0; }
+    for (const id in S.st) { const x = S.st[id]; for (const k in x.f) x.f[k].clear(); x.page = 0; x.lista = null; }
     S.st.restr.f.origem.add('Planilha de Restrição');
     const e = S.D.eqpSheet, wk = e?.semana && e?.ano ? `${e.ano}-S${String(e.semana).padStart(2, '0')}` : null;
     const semanas = new Set(S.D.exec.map(r => r.semKey));
@@ -415,10 +416,95 @@
     if (sec.id === 'painel') { const { ws, porSem } = painelData(R); const sitO = {}; ws.forEach(k => porSem[k].obras.forEach(o => sitO[k + '|' + o.obra] = o.sit)); return R.filter(r => ws.includes(r.semKey) && (r.sit === 'Não eliminada' || r.sit === 'Sem resposta')).map(r => ({ ...r, sitObra: sitO[r.semKey + '|' + r.projeto] })); }
     return R;
   }
+  /* ---------- lista no rodapé: a aba original da planilha, 100% das linhas e colunas ---------- */
+  const LISTA = {
+    visao: ['Histórico', 'Semanas Programadas', 'Equipes Mobilizadas', 'Registros Semanais', 'Analise_core team', 'Causas Cancel-Parcial', 'Histórico Restrições', 'Verificação', 'Auxiliar Rest.', 'Auxiliar ListSusp'],
+    instr: ['Instruções'], cart: ['CARTEIRA'], bp: ['Base Programada'], eqp: ['Equipes programadas'], restr: ['Planilha de Restrição', 'Histórico Restrições'], painel: ['Painel Restrições'],
+  };
+  const MAPA = { 'Histórico': { sec: 'visao', origem: 'Histórico' }, 'Base Programada': { sec: 'bp', origem: 'Base Programada' }, 'CARTEIRA': { sec: 'cart' }, 'Planilha de Restrição': { sec: 'restr', origem: 'Planilha de Restrição' }, 'Histórico Restrições': { sec: 'restr', origem: 'Histórico Restrições' } };
+  const CHAVES = { 'Histórico': 'hist', 'Base Programada': 'base', 'CARTEIRA': 'cart', 'Planilha de Restrição': 'restr', 'Histórico Restrições': 'hrestr', 'Semanas Programadas': 'sem', 'Equipes Mobilizadas': 'mob', 'Registros Semanais': 'reg', 'Verificação': 'verif' };
+  const colL = i => { let s = ''; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  function fmtVal(v, f) {
+    if (typeof v !== 'number') return v == null ? '' : String(v);
+    if (f && f[0] === 'p') { const d = +f.slice(1); return (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%'; }
+    if (f && f[0] === 'n') { const d = parseInt(f.slice(1)); return v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: f.endsWith('t') }); }
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: 10, useGrouping: false });
+  }
+  const modelos = {};
+  function modelo(nome) {
+    if (modelos[nome]) return modelos[nome];
+    const a = S.raw[D0.norm(nome)]; if (!a) return null;
+    const rows = a.rows, F = a.fmt || {}, nonEmpty = r => r && r.some(c => c !== '' && c != null);
+    const key = CHAVES[nome] ? D0.SHEETS[CHAVES[nome]] : null, t = key ? D0.findTable(rows, key.keys) : null;
+    const m = { nome, vis: a.vis, omitido: a.omitido || '', F };
+    const cel = (r, c) => fmtVal(rows[r]?.[c], F[`${r},${c}`]);
+    if (t) {
+      const h = t.hdrRow, hdr = rows[h]; let minC = Infinity, maxC = 0;
+      for (let r = h; r < rows.length; r++) { const row = rows[r] || []; row.forEach((v, c) => { if (v !== '' && v != null) { minC = Math.min(minC, c); maxC = Math.max(maxC, c + 1); } }); }
+      m.mode = 'tabela'; m.cols = []; for (let c = minC; c < maxC; c++) m.cols.push({ c, t: String(hdr[c] ?? '').trim() || `(sem título)`, L: colL(c) });
+      m.body = []; for (let r = h + 1; r < rows.length; r++) if (nonEmpty(rows[r])) m.body.push({ r: r + 1, v: m.cols.map(k => cel(r, k.c)), raw: m.cols.map(k => rows[r][k.c] ?? ''), fk: m.cols.map(k => F[`${r},${k.c}`] || '') });
+      m.topo = []; let tc = 0; for (let r = 0; r < h; r++) if (nonEmpty(rows[r])) { tc = Math.max(tc, rows[r].length); m.topo.push(r); }
+      m.topoCols = tc; m.cel = cel; m.hdrLinha = h + 1;
+    } else {
+      let maxC = 0; rows.forEach(r => { if (r) maxC = Math.max(maxC, r.length); });
+      m.mode = 'grade'; m.cols = []; for (let c = 0; c < maxC; c++) m.cols.push({ c, t: colL(c), L: '' });
+      m.body = []; rows.forEach((row, r) => { if (nonEmpty(row)) m.body.push({ r: r + 1, v: m.cols.map(k => cel(r, k.c)), raw: m.cols.map(k => row[k.c] ?? ''), fk: m.cols.map(k => F[`${r},${k.c}`] || '') }); });
+    }
+    m.busca = m.body.map(b => D0.norm(b.v.join(' ')));
+    return (modelos[nome] = m);
+  }
+  function linhasLista(sec, R) {
+    const x = st(), L = x.lista, m = modelo(L.aba); if (!m) return { m: null, rows: [] };
+    let idx = m.body.map((_, i) => i);
+    const mp = MAPA[L.aba];
+    if (L.aplicar && mp && mp.sec === sec.id) { const ok = new Set(R.filter(r => !mp.origem || r.origem === mp.origem).map(r => r.xr)); idx = idx.filter(i => ok.has(m.body[i].r)); }
+    if (L.qn.length) idx = idx.filter(i => L.qn.every(t => m.busca[i].includes(t)));
+    if (L.sort) { const [c, d] = L.sort; idx.sort((a, b) => { const x1 = m.body[a].raw[c], y1 = m.body[b].raw[c]; if (x1 === '' || x1 == null) return 1; if (y1 === '' || y1 == null) return -1; return (typeof x1 === 'number' && typeof y1 === 'number' ? x1 - y1 : String(x1).localeCompare(String(y1), 'pt', { numeric: true })) * d; }); }
+    return { m, rows: idx.map(i => m.body[i]) };
+  }
   function renderLista(R) {
-    const sec = cur(), x = st(), rows = listaRows(sec, R);
-    $('#listaCnt').textContent = `· ${int(rows.length)} registro(s)`; $('#listaSub').textContent = sec.sub + ' Clique no título da coluna para ordenar; clique no projeto para abrir o histórico.';
-    S.listaAtual = table($('#tLista'), rows, sec.cols, x.sort, s => { x.sort = s; renderLista(R); }, 50, $('#pgLista'), x.page, p => { x.page = p; renderLista(R); });
+    const sec = cur(), x = st(), abas = LISTA[sec.id].filter(n => S.raw[D0.norm(n)]);
+    if (!x.lista || !abas.includes(x.lista.aba)) x.lista = { aba: abas[0], q: '', qn: [], page: 0, sort: null, aplicar: false };
+    const L = x.lista, { m, rows } = linhasLista(sec, R);
+    const host = $('#lista');
+    if (!m) { host.innerHTML = '<h3>Aba da planilha</h3><div class="empty">Aba não encontrada no arquivo carregado.</div>'; return; }
+    const mp = MAPA[L.aba], podeAplicar = mp && mp.sec === sec.id, per = 100, pages = Math.max(1, Math.ceil(rows.length / per)); L.page = Math.min(L.page, pages - 1);
+    const pg = rows.slice(L.page * per, L.page * per + per);
+    const filtrada = L.qn.length || (L.aplicar && podeAplicar);
+    host.innerHTML = `<div class="lhead"><div><h3>Aba «${esc(L.aba)}» da planilha original <span class="cnt">· ${int(m.body.length)} linhas com dados · ${m.cols.length} colunas${m.vis ? ' · ' + esc(m.vis.toLowerCase()) + ' na planilha' : ''}</span></h3>
+      <p class="sub">${filtrada ? `<b style="color:var(--warn)">Mostrando ${int(rows.length)} de ${int(m.body.length)} linhas</b> (busca ou filtros aplicados).` : '<b style="color:var(--brand-ink)">100% da aba</b>: todas as linhas e colunas com conteúdo, com os valores e formatos da planilha (sem colunas criadas pelo painel).'} ${m.mode === 'tabela' ? `Cabeçalho na linha ${m.hdrLinha}; "Linha" = número da linha no Excel.` : 'Espelho da aba: linhas e colunas como no Excel.'}${m.omitido ? ' ' + esc(m.omitido) : ''}</p></div></div>
+      <div class="lbar">${abas.length > 1 ? `<label class="lsel">Aba <select id="lAba">${abas.map(n => `<option${n === L.aba ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>` : ''}
+        <div class="fsearch lq"><span aria-hidden="true">⌕</span><input id="lQ" type="search" placeholder="Buscar em todas as colunas desta aba…" value="${esc(L.q)}"></div>
+        ${podeAplicar ? `<label class="lap"><input type="checkbox" id="lAp"${L.aplicar ? ' checked' : ''}> Aplicar os filtros do topo</label>` : ''}
+        <button class="btn" id="lX" type="button">⤓ Excel desta aba</button><button class="btn" id="lC" type="button">⤓ CSV</button></div>
+      ${m.mode === 'tabela' && m.topo.length ? `<details class="ltopo"><summary>Conteúdo acima da tabela (linhas ${m.topo.map(r => r + 1).join(', ')})</summary><div class="tablewrap" style="max-height:260px"><table><thead><tr><th>Linha</th>${Array.from({ length: m.topoCols }, (_, c) => `<th>${colL(c)}</th>`).join('')}</tr></thead><tbody>${m.topo.map(r => `<tr><td class="num">${r + 1}</td>${Array.from({ length: m.topoCols }, (_, c) => `<td class="wrap">${esc(m.cel(r, c))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>` : ''}
+      <div class="tablewrap ltab" style="max-height:640px"><table><thead><tr><th class="num">Linha</th>${m.cols.map((k, i) => `<th data-i="${i}" title="Coluna ${k.L || k.t}">${esc(k.t)}${k.L ? `<span class="cl">${k.L}</span>` : ''}${L.sort && L.sort[0] === i ? `<span class="arr">${L.sort[1] > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('')}</tr></thead>
+      <tbody>${pg.map(b => `<tr><td class="num ln">${b.r}</td>${b.v.map((v, i) => { const isN = typeof b.raw[i] === 'number'; const proj = typeof b.raw[i] === 'string' && S.Pmap.has(b.raw[i].trim().toUpperCase()); return `<td class="${isN ? 'num' : String(v).length > 60 ? 'wrap' : ''}">${proj ? `<a href="#" class="mono" data-p="${esc(b.raw[i].trim().toUpperCase())}">${esc(v)}</a>` : esc(v)}</td>`; }).join('')}</tr>`).join('') || `<tr><td colspan="${m.cols.length + 1}" class="empty">Nenhuma linha com essa busca.</td></tr>`}</tbody></table></div>
+      <div class="pager"><span>${int(rows.length)} linhas · página ${L.page + 1} de ${pages}</span><button class="btn" data-a="-1" ${L.page ? '' : 'disabled'}>‹ Anterior</button><button class="btn" data-a="1" ${L.page < pages - 1 ? '' : 'disabled'}>Próxima ›</button></div>`;
+    const re = () => renderLista(R);
+    const sel = $('#lAba'); if (sel) sel.onchange = () => { L.aba = sel.value; L.page = 0; L.sort = null; L.aplicar = false; re(); };
+    let t; $('#lQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { L.q = e.target.value.trim(); L.qn = D0.norm(L.q).split(' ').filter(Boolean); L.page = 0; re(); const q = $('#lQ'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
+    const ap = $('#lAp'); if (ap) ap.onchange = () => { L.aplicar = ap.checked; L.page = 0; re(); };
+    host.querySelectorAll('.ltab th[data-i]').forEach(h => h.onclick = () => { const i = +h.dataset.i; L.sort = L.sort && L.sort[0] === i ? [i, -L.sort[1]] : [i, 1]; re(); });
+    host.querySelectorAll('.pager button').forEach(b => b.onclick = () => { L.page += +b.dataset.a; re(); host.scrollIntoView({ block: 'start' }); });
+    host.querySelectorAll('a[data-p]').forEach(a => a.onclick = e => { e.preventDefault(); abrirProjeto(a.dataset.p); });
+    $('#lX').onclick = () => IO.download(IO.xlsxOf(abaSheets(m, rows)), `${arqNome(L.aba)}_${stampNow()}.xlsx`);
+    $('#lC').onclick = () => { const s = abaSheet(m, rows); IO.download(new Blob([IO.csvOf(s.header, s.data.map((r, ri) => r.map((v, ci) => ci === 0 ? v : rows[ri].v[ci - 1])))], { type: 'text/csv;charset=utf-8' }), `${arqNome(L.aba)}_${stampNow()}.csv`); };
+  }
+  const arqNome = n => D0.norm(n).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  const stampNow = () => new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16).replace(/[-: ]/g, '');
+  function abaSheet(m, rows) {
+    const header = ['Linha na planilha', ...m.cols.map(k => k.L ? `${k.t} [${k.L}]` : k.t)];
+    return { name: m.nome.slice(0, 31), header, data: rows.map(b => [b.r, ...b.raw]), fmt: (ri, ci) => ci === 0 ? '' : rows[ri].fk[ci - 1] };
+  }
+  /* aba completa para Excel: a tabela + (se houver) o conteúdo acima dela, numa segunda planilha */
+  function abaSheets(m, rows) {
+    const out = [abaSheet(m, rows)];
+    if (m.mode === 'tabela' && m.topo.length) {
+      const a = S.raw[D0.norm(m.nome)], F = a.fmt || {};
+      out.push({ name: ('Topo · ' + m.nome).slice(0, 31), header: ['Linha na planilha', ...Array.from({ length: m.topoCols }, (_, c) => colL(c))], data: m.topo.map(r => [r + 1, ...Array.from({ length: m.topoCols }, (_, c) => a.rows[r][c] ?? '')]), fmt: (ri, ci) => ci === 0 ? '' : F[`${m.topo[ri]},${ci - 1}`] || '' });
+    }
+    return out;
   }
 
   /* ---------- detalhe do projeto (janela) ---------- */
@@ -454,7 +540,7 @@
   const resumo = (name, rows, key, label) => { const m = new Map(); rows.forEach(r => { const k = r[key] || '(vazio)'; if (!m.has(k)) m.set(k, []); m.get(k).push(r); }); return { name, header: [label, 'Linhas', 'UPS programado', 'UPS executado', '% executado', 'EXECUTADO', 'PARCIAL', 'Cancelado', 'Sem status'], data: [...m.entries()].sort().map(([k, L]) => { const p = sum(L, r => r.upsProg), e = sum(L, r => r.upsExec); return [key === 'semKey' ? semLabel(k) : key === 'data' ? br(k) : k, L.length, Math.round(p * 100) / 100, Math.round(e * 100) / 100, p ? Math.round(e / p * 10000) / 10000 : '', L.filter(r => r.grupo === 'Executado').length, L.filter(r => r.grupo === 'Executado parcial').length, L.filter(r => r.grupo === 'Cancelado').length, L.filter(r => r.grupo.startsWith('Sem status') || r.grupo.startsWith('A executar')).length]; }) }; };
   const qualSheet = () => ({ name: 'Qualidade', header: ['Nível', 'Verificação', 'Detalhe 1', 'Detalhe 2', 'Detalhe 3', 'Detalhe 4', 'Detalhe 5'], data: S.Q.flatMap(q => q.itens.length ? q.itens.map(it => [q.nivel, q.titulo, ...it]) : [[q.nivel, q.titulo, 'sem ocorrências']]) });
   function exportar() {
-    const sec = cur(), R = filtered(sec), L = listaRows(sec, R); let sheets;
+    const sec = cur(), R = filtered(sec), L = listaRows(sec, R); let sheets; const lst = linhasLista(sec, R);
     if (sec.id === 'visao') sheets = [sheetOf('Lista geral', sec.cols, L), resumo('Por semana', R, 'semKey', 'Semana'), resumo('Por mês', R, 'mes', 'Mês'), resumo('Por encarregado', R, 'encarregado', 'Encarregado'), qualSheet()];
     else if (sec.id === 'instr') sheets = [sheetOf('Instruções', sec.cols, L)];
     else if (sec.id === 'cart') { const ps = new Set(R.map(r => r.projeto)); sheets = [sheetOf('CARTEIRA', sec.cols, L), sheetOf('Execuções das obras', C_EXEC, S.D.exec.filter(r => ps.has(r.projeto)))]; }
@@ -468,10 +554,11 @@
       sheets = [{ name: 'Resumo por semana', header: ['Semana', 'Restrições', 'Eliminadas', 'Base (total − não aplicável)', '% eliminadas', 'Meta 90%', 'Pendentes', 'Obras com pendência'], data: ws.map(k => { const p = porSem[k]; return [semLabel(k), p.total, p.el, p.base, p.pct ?? '', p.total ? (p.pct >= 0.9 ? 'BATIDA' : 'NÃO BATIDA') : 'Sem restrições', p.pend, p.obrasPend]; }) },
         { name: 'Obra x semana', header: ['Obra', ...ws.map(semLabel)], data: obras.map(o => [o, ...ws.map(k => { const x = porSem[k].obras.find(b => b.obra === o); return x ? (x.pend === 0 ? 'Liberada' : x.pend) : ''; })]) }, sheetOf('Pendentes', sec.cols, L)]; }
     const stamp = new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16).replace(/[-: ]/g, '');
+    if (lst.m) sheets = [...abaSheets(lst.m, lst.rows), ...sheets.map(sh => ({ ...sh, name: ('Análise · ' + sh.name).slice(0, 31) }))];
     IO.download(IO.xlsxOf(sheets), `planejamento_start_${sec.id}_${stamp}.xlsx`);
   }
   $('#btnXlsx').onclick = exportar;
-  $('#btnCsv').onclick = () => { const sec = cur(), L = listaRows(sec, filtered(sec)); const s = sheetOf('x', sec.cols, L); const stamp = new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16).replace(/[-: ]/g, ''); IO.download(new Blob([IO.csvOf(s.header, s.data)], { type: 'text/csv;charset=utf-8' }), `planejamento_start_${sec.id}_${stamp}.csv`); };
+  $('#btnCsv').onclick = () => { const sec = cur(), lst = linhasLista(sec, filtered(sec)); if (!lst.m) return; const s0 = abaSheet(lst.m, lst.rows), s = { header: s0.header, data: lst.rows.map(b => [b.r, ...b.v]) }; const stamp = new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16).replace(/[-: ]/g, ''); IO.download(new Blob([IO.csvOf(s.header, s.data)], { type: 'text/csv;charset=utf-8' }), `planejamento_start_${sec.id}_${stamp}.csv`); };
 
   /* ---------- importação ---------- */
   const modal = $('#modal');
@@ -482,7 +569,17 @@
   drop.onclick = () => inp.click(); drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); }; drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) importar(e.dataTransfer.files[0]); };
   inp.onchange = () => { if (inp.files[0]) importar(inp.files[0]); inp.value = ''; };
-  const KEEP = ['INSTRUCOES', 'HISTORICO', 'BASE PROGRAMADA', 'CARTEIRA', 'PLANILHA DE RESTRICAO', 'HISTORICO RESTRICOES', 'SEMANAS PROGRAMADAS', 'EQUIPES MOBILIZADAS', 'REGISTROS SEMANAIS', 'AUXILIAR LISTSUSP', 'VERIFICACAO', 'EQUIPES PROGRAMADAS'];
+  const FORA = ['LOG_USUARIOS', 'CONTROLE DE ACESSO'];
+  /* Aba Auxiliar ListSusp: apaga só as colunas do cadastro nominal de funcionários (bloco com o título REGISTRO). */
+  function semCadastro(a) {
+    let hr = -1, hc = -1;
+    a.rows.slice(0, 10).forEach((r, i) => (r || []).forEach((v, c) => { if (hr < 0 && D0.norm(v) === 'REGISTRO') { hr = i; hc = c; } }));
+    if (hr < 0) return a;
+    const h = a.rows[hr]; let c1 = hc, c2 = hc; while (c1 > 0 && String(h[c1 - 1] ?? '').trim() !== '') c1--; while (String(h[c2 + 1] ?? '').trim() !== '') c2++;
+    const rows = a.rows.map(r => { if (!r) return r; const x = r.slice(); for (let c = c1; c <= c2 && c < x.length; c++) x[c] = ''; while (x.length && x[x.length - 1] === '') x.pop(); return x; });
+    const fmt = {}; for (const k in a.fmt || {}) { const c = +k.split(',')[1]; if (c < c1 || c > c2) fmt[k] = a.fmt[k]; }
+    return { ...a, rows, fmt, omitido: `Colunas do cadastro nominal de funcionários (${h.slice(c1, c2 + 1).join(', ')}) não são exibidas.` };
+  }
   async function importar(f) {
     const prog = $('#prog');
     try {
@@ -491,9 +588,9 @@
       const abas = await IO.readXlsx(await f.arrayBuffer(), t => prog.textContent = t);
       const D = D0.build(abas);
       if (!D.exec.length && !D.cart.length) throw new Error('Não encontrei as tabelas da planilha (Histórico, Base Programada, CARTEIRA). Confira se é a Planilha de Planejamento START.');
-      const slim = abas.filter(a => KEEP.includes(D0.norm(a.aba))).map(a => D0.norm(a.aba) === 'AUXILIAR LISTSUSP' ? { aba: a.aba, rows: a.rows.slice(0, 30).map(r => r.slice(0, 40)) } : D0.norm(a.aba) === 'EQUIPES PROGRAMADAS' ? { aba: a.aba, rows: a.rows.slice(0, 9) } : a);
+      const slim = abas.filter(a => !FORA.includes(D0.norm(a.aba))).map(a => D0.norm(a.aba) === 'AUXILIAR LISTSUSP' ? semCadastro(a) : a);
       const gerado = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }).slice(0, 17);
-      const inventario = abas.map(a => ({ aba: a.aba, vis: '—', linhas: a.rows.filter(r => r && r.some(c => String(c ?? '').trim() !== '')).length, conteudo: '', uso: KEEP.includes(D0.norm(a.aba)) ? 'Lida pelo painel' : 'Não usada pelo painel' }));
+      const inventario = abas.map(a => ({ aba: a.aba, vis: '—', linhas: a.rows.filter(r => r && r.some(c => String(c ?? '').trim() !== '')).length, conteudo: '', uso: FORA.includes(D0.norm(a.aba)) ? 'Não exibida (dados de acesso)' : 'Exibida por inteiro na lista do rodapé' }));
       carregar(slim, { fonte: f.name, origem: 'importada', gerado, inventario, achados: [] });
       prog.textContent = `Pronto: ${D.exec.length} linhas de programação, ${D.cart.length} obras, ${D.restr.length} restrições.` + (D.faltando.length ? ` Não encontrei: ${D.faltando.join(', ')}.` : '');
       if ($('#lembrar').checked) await IO.save('baseplan2', { abas: slim, fonte: f.name, gerado, inventario });

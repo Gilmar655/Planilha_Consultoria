@@ -275,3 +275,18 @@ th{background:#eef3f0;color:#33413c}
 .navcard{padding:9px 11px}
 .side .sidetitle{margin-top:2px}
 @media (max-width:900px){.factions{margin-left:0}.secmeta{display:none}.fbar{position:static}}
+
+/* ===== aba original no rodapé ===== */
+.lista .lhead h3{font-size:15.5px}
+.lbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
+.lsel{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.lsel select{border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;background:#fff;font-weight:600}
+.lq{min-width:240px}
+.lap{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:6px 10px}
+.lap input{accent-color:var(--brand)}
+.ltab th{white-space:normal;min-width:90px;vertical-align:bottom}
+.ltab th .cl{display:block;font-size:10px;color:var(--ink-3);font-weight:500;margin-top:2px}
+.ltab td.ln,.ltab th:first-child{position:sticky;left:0;background:#f0f3f1;z-index:1;color:var(--ink-3);min-width:56px}
+.ltab th:first-child{z-index:2}
+.ltopo{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--surface-2)}
+.ltopo summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2)}

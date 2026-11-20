@@ -45,8 +45,16 @@ DESC = {
     'Verificação': ('Verificação de consistência gerada pela macro da planilha.', 'Mostrada como está em Qualidade e abas.'),
     'Equipes Mobilizadas': ('Equipes mobilizadas por mês (LM/LV), meta mensal, UPS executado e desempenho.', 'Tabela na Visão geral.'),
 }
+LISTA = {'Instruções': 'Instruções', 'CARTEIRA': 'Carteira', 'Base Programada': 'Base Programada', 'Equipes programadas': 'Equipes programadas', 'Planilha de Restrição': 'Planilha de Restrição', 'Painel Restrições': 'Painel Restrições', 'Histórico Restrições': 'Planilha de Restrição e Visão geral'}
+def uso(t):
+    if t in ('LOG_USUARIOS', 'Controle de Acesso'):
+        return 'Não exibida: dados de acesso de pessoas e configuração de segurança.'
+    s = f"Aba completa na lista do rodapé da seção {LISTA.get(t, 'Visão geral')}."
+    if t == 'Auxiliar ListSusp':
+        s += ' Sem as colunas do cadastro nominal de funcionários (Table10).'
+    return s + ' ' + DESC.get(t, ('', ''))[1]
 inv = [{'aba': ws.title, 'vis': 'Visível' if ws.sheet_state == 'visible' else 'Oculta', 'linhas': nonempty(ws),
-        'conteudo': DESC.get(ws.title, ('', ''))[0], 'uso': DESC.get(ws.title, ('', ''))[1]} for ws in wb.worksheets]
+        'conteudo': DESC.get(ws.title, ('', ''))[0], 'uso': uso(ws.title)} for ws in wb.worksheets]
 
 # ---------- achados (comparações feitas no próprio arquivo) ----------
 achados = []
@@ -108,8 +116,8 @@ sem_eq = [r['Mês'].strftime('%m/%Y') for r in EM if num(r.get('UPS executado no
 if sem_eq:
     achados.append({'nivel': 'warn', 'titulo': 'Equipes Mobilizadas: mês com UPS executado e sem equipes informadas',
                     'texto': 'Meses: ' + ', '.join(sem_eq) + '. Sem a quantidade de equipes, o desempenho mensal fica vazio. A A&M preenche essa aba no início de cada mês.'})
-achados.append({'nivel': 'info', 'titulo': 'Abas lidas e não exibidas',
-                'texto': 'LOG_USUARIOS (registro de acesso de pessoas), Controle de Acesso (configuração de segurança) e o cadastro nominal de funcionários da aba Auxiliar ListSusp foram lidos, mas ficam fora do painel por conterem dados de acesso e de pessoas.'})
+achados.append({'nivel': 'info', 'titulo': 'O que não é exibido',
+                'texto': 'Todas as abas aparecem por inteiro na lista do rodapé, exceto LOG_USUARIOS (registro de acesso de pessoas), Controle de Acesso (configuração de segurança) e as colunas do cadastro nominal de funcionários da aba Auxiliar ListSusp (Table10, com número de registro).'})
 
 data['inventario'] = inv
 data['achados'] = achados

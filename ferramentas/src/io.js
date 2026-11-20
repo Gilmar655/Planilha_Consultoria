@@ -32,8 +32,8 @@ const IO = (() => {
   const xml = s => new DOMParser().parseFromString(s, 'application/xml');
   const colIdx = ref => { let n = 0; for (const ch of ref) { const c = ch.charCodeAt(0); if (c < 65 || c > 90) break; n = n * 26 + (c - 64); } return n - 1; };
   const pad = n => String(n).padStart(2, '0');
-  function serialToDate(v) { const d = new Date(Math.round((v - 25569) * 86400000)); return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`; }
-  function serialToTime(v) { let m = Math.round((v % 1) * 1440); if (m >= 1440) m -= 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
+  function serialToDate(v) { if (v < 1) return '00/01/1900'; const d = new Date(Math.round((Math.floor(v) + (v < 61 ? 1 : 0) - 25569) * 86400000)); return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`; } // 1900 como no Excel
+  function serialToTime(v) { const sec = Math.round((v % 1) * 86400) % 86400, m = Math.floor(sec / 60); return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; } // como o Excel: segundos truncados
 
   /* ---- XLSX -> {abas:[{aba, rows}]} ---- */
   async function readXlsx(buf, onProgress) {
@@ -51,7 +51,9 @@ const IO = (() => {
       }
     }
     // estilos: quais índices de estilo são data/hora
-    const kind = [];
+    const kind = [], fc = [];
+    const BUILTIN = { 1: '0', 2: '0.00', 3: '#,##0', 4: '#,##0.00', 9: '0%', 10: '0.00%', 37: '#,##0', 38: '#,##0', 39: '#,##0.00', 40: '#,##0.00' };
+    const fcode = f => { if (!f || f === 'General' || f === '@') return ''; const g = f.replace(/"[^"]*"|\[[^\]]*\]|\\.|_.|\*./g, '').split(';')[0]; const m = g.match(/0\.(0+)/), d = m ? m[1].length : 0; if (g.includes('%')) return 'p' + d; if (/[0#]/.test(g) && !/[dmyhs]/i.test(g)) return 'n' + d + (g.split('.')[0].includes(',') ? 't' : ''); return ''; };
     const sty = await z.read('xl/styles.xml');
     if (sty) {
       const sd = xml(sty), custom = {};
@@ -62,7 +64,7 @@ const IO = (() => {
         let k = '';
         if ((id >= 14 && id <= 17) || id === 22 || /[dy]/.test(code) || (/m/.test(code) && !/[hs]/.test(code) && !/0/.test(code))) k = 'date';
         if ((id >= 18 && id <= 21) || (id >= 45 && id <= 47) || (/h/.test(code) && !/[dy]/.test(code))) k = 'time';
-        kind.push(k);
+        kind.push(k); fc.push(k ? '' : fcode(custom[id] ?? BUILTIN[id] ?? ''));
       }
     }
     const sheets = [...wb.getElementsByTagName('sheet')];
@@ -74,7 +76,7 @@ const IO = (() => {
       let target = rmap[rid] || ''; target = target.replace(/^\/?xl\//, '').replace(/^\//, '');
       onProgress && onProgress(`Lendo aba ${si + 1} de ${sheets.length}: ${name}`);
       const s = await z.read('xl/' + target); if (!s) continue;
-      const doc = xml(s), rows = [];
+      const doc = xml(s), rows = [], fmt = {};
       for (const row of doc.getElementsByTagName('row')) {
         const ri = (+row.getAttribute('r') || rows.length + 1) - 1; const arr = [];
         for (const c of row.getElementsByTagName('c')) {
@@ -87,17 +89,19 @@ const IO = (() => {
           else if (t === 'str') { /* fórmula texto */ }
           else if (v !== '') {
             const num = +v, k = kind[+c.getAttribute('s') || 0] || '';
-            if (k === 'date' && num > 1000) v = serialToDate(num) + (num % 1 ? ' ' + serialToTime(num) : '');
-            else if (k === 'time' && num < 1) v = serialToTime(num);
-            else v = num;
+            if (k === 'date' && num >= 0) v = serialToDate(num) + (Math.round((num % 1) * 86400) % 86400 >= 60 ? ' ' + serialToTime(num) : '');
+            else if (k === 'time' && num >= 0) v = serialToTime(num);
+            else { v = num; const f = fc[+c.getAttribute('s') || 0]; if (f) fmt[`${ri},${ci}`] = f; }
           }
           arr[ci] = v;
         }
         for (let k = 0; k < arr.length; k++) if (arr[k] === undefined) arr[k] = '';
+        while (arr.length && arr[arr.length - 1] === '') arr.pop();
         rows[ri] = arr;
       }
       for (let k = 0; k < rows.length; k++) if (!rows[k]) rows[k] = [];
-      out.push({ aba: name, rows });
+      while (rows.length && !rows[rows.length - 1].some(x => x !== '')) rows.pop();
+      out.push({ aba: name, rows, fmt, vis: sh.getAttribute('state') === 'hidden' || sh.getAttribute('state') === 'veryHidden' ? 'Oculta' : 'Visível' });
       await new Promise(r => setTimeout(r, 0));
     }
     return out;
@@ -156,18 +160,21 @@ const IO = (() => {
   }
   const xesc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
   const colName = i => { let s = ''; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
-  function xlsxOf(sheets) { // sheets: [{name, header, data}]
+  // formatos de número: código do painel -> estilo (índice em cellXfs, a partir de 2)
+  const XF = [9, 164, 10, 2, 165, 166, 3, 4, 167, 1];
+  const XFK = { p0: 2, p1: 3, p2: 4, n2: 5, n1: 6, n3: 7, n0t: 8, n2t: 9, n1t: 10, n0: 11 };
+  function xlsxOf(sheets) { // sheets: [{name, header, data, fmt?(ri,ci)}]
     const files = [];
     files.push(['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>']);
     files.push(['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>']);
     files.push(['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map((s, i) => `<sheet name="${xesc(s.name.slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>']);
     files.push(['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`]);
-    files.push(['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0B6E4F"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/></cellXfs></styleSheet>']);
+    files.push(['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="4"><numFmt numFmtId="164" formatCode="0.0%"/><numFmt numFmtId="165" formatCode="0.0"/><numFmt numFmtId="166" formatCode="0.000"/><numFmt numFmtId="167" formatCode="#,##0.0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0B6E4F"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="12"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/>' + XF.map(id => `<xf numFmtId="${id}" applyNumberFormat="1"/>`).join('') + '</cellXfs></styleSheet>']);
     sheets.forEach((s, i) => {
       const rows = [s.header, ...s.data].map((r, ri) => `<row r="${ri + 1}">` + r.map((v, ci) => {
         const ref = colName(ci) + (ri + 1);
         if (v == null || v === '') return '';
-        if (typeof v === 'number' && isFinite(v)) return `<c r="${ref}"${ri ? '' : ' s="1"'}><v>${v}</v></c>`;
+        if (typeof v === 'number' && isFinite(v)) { const st = ri && s.fmt ? XFK[s.fmt(ri - 1, ci)] : null; return `<c r="${ref}"${ri ? (st ? ` s="${st}"` : '') : ' s="1"'}><v>${v}</v></c>`; }
         return `<c r="${ref}" t="inlineStr"${ri ? '' : ' s="1"'}><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
       }).join('') + '</row>').join('');
       const cols = '<cols>' + s.header.map((h, ci) => `<col min="${ci + 1}" max="${ci + 1}" width="${Math.min(60, Math.max(10, String(h).length + 4))}" customWidth="1"/>`).join('') + '</cols>';

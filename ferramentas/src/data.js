@@ -21,7 +21,7 @@ const Data = (() => {
     let y = +m[3]; if (y < 100) y += 2000; return `${y}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
   }
   function hora(v) {
-    if (typeof v === 'number') { if (v < 1) { const m = Math.round(v * 1440); return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); } return ''; }
+    if (typeof v === 'number') { if (v < 1) { const m = Math.floor(Math.round(v * 86400) / 60); return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); } return ''; }
     const m = clean(v).match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : '';
   }
 
@@ -32,10 +32,11 @@ const Data = (() => {
       const n = (rows[i] || []).map(norm);
       if (K.every(k => n.includes(k))) {
         const hdr = rows[i].map(clean), idx = {}; hdr.forEach((h, j) => { const k = norm(h); if (k && !(k in idx)) idx[k] = j; });
-        const key = idx[K[0]], data = [];
-        for (let r = i + 1; r < rows.length; r++) { const row = rows[r] || []; if (row.some(c => clean(c) !== '')) data.push(row); }
+        const key = idx[K[0]], pairs = [];
+        for (let r = i + 1; r < rows.length; r++) { const row = rows[r] || []; if (row.some(c => clean(c) !== '')) pairs.push([row, r + 1]); }
         const get = (row, name) => { const j = idx[norm(name)]; return j == null ? '' : row[j] ?? ''; };
-        return { hdr, data: data.filter(r => clean(r[key]) !== '' || r.some((c, j) => j !== key && clean(c) !== '' && !/^start$/i.test(clean(c)))), get, has: n => norm(n) in idx };
+        const keep = pairs.filter(([r]) => clean(r[key]) !== '' || r.some((c, j) => j !== key && clean(c) !== '' && !/^start$/i.test(clean(c))));
+        return { hdr, hdrRow: i, data: keep.map(p => p[0]), xr: keep.map(p => p[1]), get, has: n => norm(n) in idx };
       }
     }
     return null;
@@ -76,7 +77,7 @@ const Data = (() => {
         const nome = (enc || resto.join(' - ')).toUpperCase();
         const upsPlanRaw = g('Ups_Plan');
         const rec = {
-          origem, i, data: toISO(g('Data da programação')), semana: num(g('Semana')), ano: num(g('Ano')), id: clean(g('ID Execução')),
+          origem, i, xr: t.xr[i], data: toISO(g('Data da programação')), semana: num(g('Semana')), ano: num(g('Ano')), id: clean(g('ID Execução')),
           projeto: clean(g('Projeto')).toUpperCase(), nota: clean(g('Nota')), familia: clean(g('familia_regen')), prazo: clean(g('STATUS_PRAZO')).toUpperCase(),
           diasVenc: num(g('Qtd Dias p/ Venc')), tipoProg: clean(g('Tipo de Programação')), pctPlan: frac(g('% Planejada')), upsPlan: num(upsPlanRaw), upsPlanTexto: isTextNum(upsPlanRaw),
           upsExecProj: num(g('Ups_Exec_Projeto')), municipio: clean(g('municipio')).toUpperCase(), qtdEquipes: num(g('Qtd Equipes')),
@@ -109,7 +110,7 @@ const Data = (() => {
       const g = n => T.cart.get(r, n);
       const aproIso = toISO(g('dataAPRO'));
       cart.push({
-        i, projeto: clean(g('Projeto')).toUpperCase(), nota: clean(g('Nota')), statusNota: clean(g('Status_Nota')), statusProjeto: clean(g('Status_Projeto')),
+        i, xr: T.cart.xr[i], projeto: clean(g('Projeto')).toUpperCase(), nota: clean(g('Nota')), statusNota: clean(g('Status_Nota')), statusProjeto: clean(g('Status_Projeto')),
         familia: clean(g('familia_regen')), tipoProjeto: clean(g('Tipo_projeto')), mbo: clean(g('KPI MBO')), prazo: clean(g('STATUS_PRAZO')).toUpperCase(),
         diasVenc: num(g('Qtd Dias p/ Venc')), contrato: clean(g('contrato')), upsPlan: num(g('Ups_Plan')), upsExecProj: num(g('Ups_Exec_Projeto')),
         tipoCliente: clean(g('Tipo de Cliente')), area: clean(g('Area Real')), circuito: clean(g('Circuito')), localInst: clean(g('LocalInst')),
@@ -136,7 +137,7 @@ const Data = (() => {
         const g = n => t.get(r, n);
         const ret = g('DATA DE RETORNO');
         const rec = {
-          origem, i, projeto: clean(g('Projeto')).toUpperCase(), id: clean(g('ID Execução')), familia: clean(g('familia_regen')),
+          origem, i, xr: t.xr[i], projeto: clean(g('Projeto')).toUpperCase(), id: clean(g('ID Execução')), familia: clean(g('familia_regen')),
           data: toISO(g('DATA DE PROGRAMAÇÃO')), semana: num(g('SEMANA')), ano: num(g('ANO')), restricao: clean(g('RESTRIÇÃO')), descricao: clean(g('DESCRIÇÃO DA RESTRIÇÃO')),
           area: clean(g('ÁREA RESPONSÁVEL')), responsavel: clean(g('Responsável')), acao: clean(g('AÇÃO')), retorno: toISO(ret) || clean(ret), retornoTexto: clean(ret) !== '' && !toISO(ret),
           limite: toISO(g('DATA LIMITE PARA ELIMINAÇÃO DA RESTRIÇÃO')), eliminada: clean(g('RESTRIÇÃO ELIMINADA?')), justificativa: clean(g('JUSTIFICATIVA')),
@@ -259,5 +260,5 @@ const Data = (() => {
 
   const br = d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : '';
   const diaSem = d => ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][new Date(d + 'T12:00:00').getDay()];
-  return { build, projetos, qualidade, norm, br, diaSem, num, toISO };
+  return { build, projetos, qualidade, norm, br, diaSem, num, toISO, findTable, SHEETS };
 })();
