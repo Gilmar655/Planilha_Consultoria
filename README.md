@@ -1,6 +1,6 @@
 # Planejamento START · Programação e Execução
 
-Painel estático (HTML + CSS + JavaScript num único `index.html`, sem servidor) feito a partir da **Planilha de Planejamento START** (`20260224_Planilha de Planejamento_START.xlsm`).
+Painel estático (HTML + CSS + JavaScript num único `index.html`, sem servidor) feito a partir da **Planilha de Planejamento START** (.xlsm). A planilha em si **não fica no repositório**: o robô gera o site e apaga o arquivo, inclusive do histórico.
 
 Desenvolvido por **Gilmar Campos**, Técnico – Gestão de Programação · Enel Brasil – Grids.
 
@@ -49,16 +49,18 @@ No fim de cada seção aparece a aba correspondente da planilha **por inteiro**:
 
 1. No repositório, clique em **Add file → Upload files**.
 2. Arraste a planilha nova (.xlsm ou .xlsx) e clique em **Commit changes**. O nome do arquivo pode ser qualquer um.
-3. Em cerca de 2 a 3 minutos o robô gera o site de novo e o publica. Acompanhe na aba **Actions** do repositório: ✅ verde = publicado.
+3. Em cerca de 2 a 3 minutos o robô gera o site de novo, publica e **apaga a planilha do repositório e de todo o histórico**. Acompanhe na aba **Actions** do repositório: ✅ verde = publicado e planilha apagada.
 4. O resumo de cada execução (aba Actions → execução → Summary) mostra quantas linhas foram lidas de cada aba e as conferências (ex.: Semanas Programadas confere com as linhas).
 
-O robô usa a planilha enviada naquele upload. Para gerar de novo à mão: **Actions → Atualizar site com a planilha → Run workflow** (usa a planilha enviada mais recentemente).
+Entre o upload e o fim do robô (2 a 3 minutos) a planilha fica visível no repositório. Para ela nunca passar pelo GitHub, use a atualização pelo chat (abaixo).
 
-Dica: para o repositório não crescer a cada dia, apague as planilhas antigas (abra o arquivo → ⋯ → Delete file) ou envie sempre com o mesmo nome, que substitui a anterior.
+Se o robô falhar (❌), ele apaga a planilha do mesmo jeito e o site fica como estava; confira o motivo no log e envie de novo.
+
+Como a planilha é apagada a cada execução, **Run workflow** manual não tem planilha para ler: para gerar de novo, envie a planilha outra vez.
 
 ### Atualização pelo chat
 
-Anexe a planilha nova na conversa com o Claude e peça para atualizar o site: ele gera, confere e publica.
+Anexe a planilha nova na conversa com o Claude e peça para atualizar o site: ele gera, confere e publica só o `index.html`. A planilha não é enviada ao GitHub.
 
 ### Só para consulta, sem publicar
 
@@ -73,7 +75,7 @@ python ferramentas/atualizar_site.py "Planilha_de_Planejamento_START.xlsm"
 
 ## Atenção: repositório público
 
-Este repositório é **público**. O `index.html` traz embutidos nomes de encarregados, códigos de projeto, bairros e municípios, justificativas e observações. O arquivo `.xlsm` na raiz contém ainda mais: a aba LOG_USUARIOS (e-mails e usuários de quem abriu a planilha) e o cadastro de funcionários com número de registro. Confirme com a área responsável se esses dados podem ficar públicos, ou torne o repositório privado.
+Este repositório é **público**. O `index.html` traz embutidos nomes de encarregados, códigos de projeto, bairros e municípios, justificativas e observações. A planilha .xlsm não fica no repositório (o robô a apaga, inclusive do histórico), porque contém a aba LOG_USUARIOS (e-mails e usuários de quem abriu a planilha), o Controle de Acesso e o cadastro de funcionários com número de registro. Confirme com a área responsável se os dados do `index.html` podem ficar públicos.
 
 O painel deixa de fora LOG_USUARIOS, Controle de Acesso, o cadastro nominal de funcionários e as colunas Username.
 
@@ -82,6 +84,6 @@ O painel deixa de fora LOG_USUARIOS, Controle de Acesso, o cadastro nominal de f
 - `index.html`: o painel completo (dados, estilos e scripts embutidos).
 - `assets/`: coloque aqui o `logo-enel.png`. Sem ele, aparece o selo em texto "Enel Brasil · Grids".
 - `ferramentas/`: `atualizar_site.py` (usado pelo robô), `build.py`, `extrair.py` e o código-fonte em `src/`.
-- `.github/workflows/atualizar-site.yml`: o robô que gera e publica o site quando uma planilha é enviada.
+- `.github/workflows/atualizar-site.yml`: o robô que gera e publica o site quando uma planilha é enviada e depois apaga a planilha do repositório e do histórico.
 - `versao-anterior-setembro-2026/`: o site que estava antes na raiz, guardado sem alterações.
 - `.nojekyll`: publica os arquivos como estão no GitHub Pages.

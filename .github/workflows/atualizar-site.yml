@@ -1,7 +1,10 @@
 name: Atualizar site com a planilha
 
-# Roda sozinho quando uma planilha .xlsm/.xlsx é enviada ao repositório.
-# Também pode ser disparado à mão em Actions → "Atualizar site com a planilha" → Run workflow.
+# Roda sozinho quando uma planilha .xlsm/.xlsx é enviada ao repositório:
+#   1) gera o index.html a partir da planilha;
+#   2) apaga a planilha do repositório E de todo o histórico (ela não pode ficar pública);
+#   3) publica o index.html novo.
+# Mesmo se a geração falhar, a planilha é apagada e o site fica como estava.
 on:
   push:
     branches: [main]
@@ -27,24 +30,48 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Instalar leitor de Excel
-        run: pip install openpyxl
+      - name: Instalar leitor de Excel e limpador de histórico
+        run: pip install openpyxl git-filter-repo
 
       - name: Gerar o site a partir da planilha
+        id: gerar
+        continue-on-error: true
         env:
           ANTES: ${{ github.event.before }}
           DEPOIS: ${{ github.sha }}
           TZ: America/Sao_Paulo
-        run: python ferramentas/atualizar_site.py
-
-      - name: Publicar o index.html atualizado
         run: |
-          if git diff --quiet -- index.html; then
-            echo "O site já estava igual; nada a publicar."
-            exit 0
-          fi
+          python ferramentas/atualizar_site.py
+          cp index.html "$RUNNER_TEMP/index.html"
+
+      - name: Apagar a planilha do repositório e de todo o histórico
+        run: |
+          git filter-repo --force --invert-paths \
+            --path-glob '*.xlsm' --path-glob '*.xlsx' \
+            --path-glob '*.XLSM' --path-glob '*.XLSX'
+          # o filter-repo remove o "origin"; volta a apontar para o repositório
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+      - name: Publicar o index.html atualizado (sem a planilha)
+        env:
+          TZ: America/Sao_Paulo
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git commit -m "Atualiza o site com a planilha enviada ($(TZ=America/Sao_Paulo date '+%d/%m/%Y %H:%M'))"
-          git push
+          if [ "${{ steps.gerar.outcome }}" = "success" ]; then
+            cp "$RUNNER_TEMP/index.html" index.html
+            if ! git diff --quiet -- index.html; then
+              git add index.html
+              git commit -m "Atualiza o site com a planilha enviada ($(date '+%d/%m/%Y %H:%M'))"
+            else
+              echo "O site já estava igual."
+            fi
+          fi
+          git push --force origin HEAD:main
+          echo "- 🔒 A planilha foi apagada do repositório e do histórico." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Avisar se a geração falhou
+        if: steps.gerar.outcome != 'success'
+        run: |
+          echo "❌ A planilha não gerou o site (veja o passo 'Gerar o site'). Ela já foi apagada; o site ficou como estava." | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 1
